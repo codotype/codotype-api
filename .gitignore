@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Generated Apps & Zips
+generated_apps/**/*
+generated_zips/**/*
+!generated_zips/.gitkeep
+!generated_apps/.gitkeep
+
 # Runtime data
 pids
 *.pid

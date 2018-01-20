@@ -1,0 +1,4 @@
+{
+  "verbose": true,
+  "ignore": ["generated_zips/**/*", "generated_apps/**/*"]
+}

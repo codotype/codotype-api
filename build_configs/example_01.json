@@ -1,0 +1,228 @@
+{
+  "label": "Observatory",
+  "identifier": "observatory",
+  "schemas": [
+    {
+      "_id": "schema_59946578586264",
+      "label": "Project",
+      "label_plural": "Projects",
+      "identifier": "project",
+      "identifier_plural": "projects",
+      "attributes": [
+        {
+          "order": 1,
+          "label": "Name",
+          "help": "Project name",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "name",
+          "_id": "attr_56911440862852"
+        },
+        {
+          "order": 2,
+          "label": "GitHub Repo",
+          "help": "GitHub repository URL",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "repository",
+          "_id": "attr_17695749950554"
+        },
+        {
+          "order": 3,
+          "label": "Website",
+          "help": "Website for the Project",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "website",
+          "_id": "attr_81066899406782"
+        },
+        {
+          "order": 4,
+          "label": "Proposal",
+          "help": "Proposal URL",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "proposal",
+          "_id": "attr_23226429418405"
+        },
+        {
+          "order": 5,
+          "label": "Blog",
+          "help": "Blog URL",
+          "required": false,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "blog_url",
+          "_id": "attr_57707685547873"
+        }
+      ],
+      "display": {
+        "icon": "fa-square-o",
+        "navbar_link": true
+      }
+    },
+    {
+      "_id": "schema_52921816217024",
+      "label": "Blog",
+      "label_plural": "Blogs",
+      "identifier": "blog",
+      "identifier_plural": "blogs",
+      "attributes": [
+        {
+          "order": 1,
+          "label": "Title",
+          "help": "Title of the blog post",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "title",
+          "_id": "attr_71840736075472"
+        },
+        {
+          "order": 2,
+          "label": "Body",
+          "help": "Body of the blog post",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "body",
+          "_id": "attr_32378291097153"
+        },
+        {
+          "order": 3,
+          "label": "Author",
+          "help": "Author of the blog post",
+          "required": false,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "author",
+          "_id": "attr_75084868373530"
+        }
+      ],
+      "display": {
+        "icon": "fa-square-o",
+        "navbar_link": true
+      }
+    },
+    {
+      "_id": "schema_86225518657341",
+      "label": "Achievement",
+      "label_plural": "Achievements",
+      "identifier": "achievement",
+      "identifier_plural": "achievements",
+      "attributes": [
+        {
+          "order": 1,
+          "label": "Name",
+          "help": "Name of the achievement",
+          "required": false,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "name",
+          "_id": "attr_70466819121783"
+        },
+        {
+          "order": 2,
+          "label": "Body",
+          "help": "Body of the achievement",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "body",
+          "_id": "attr_53626634806678"
+        }
+      ],
+      "display": {
+        "icon": "fa-square-o",
+        "navbar_link": true
+      }
+    },
+    {
+      "_id": "schema_18095235289452",
+      "label": "Developer",
+      "label_plural": "Developers",
+      "identifier": "developer",
+      "identifier_plural": "developers",
+      "attributes": [
+        {
+          "order": 1,
+          "label": "Name",
+          "help": "Name of the developer",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "name",
+          "_id": "attr_24483248855721"
+        },
+        {
+          "order": 2,
+          "label": "GitHub Username",
+          "help": "GitHub username of the Developer",
+          "required": false,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "github_username",
+          "_id": "attr_24584921192028"
+        },
+        {
+          "order": 3,
+          "label": "E-Mail",
+          "help": "Email of the dev",
+          "required": true,
+          "unique": false,
+          "col_span": 6,
+          "datatype": "TEXT",
+          "datatypeOptions": {},
+          "identifier": "email",
+          "_id": "attr_11533956452409"
+        }
+      ],
+      "display": {
+        "icon": "fa-square-o",
+        "navbar_link": true
+      }
+    }
+  ],
+  "stack": {
+    "server": {
+      "id": "expressjs"
+    },
+    "client": {
+      "id": "vuejs"
+    },
+    "database": {
+      "id": "mongodb"
+    },
+    "features": [],
+    "deployments": []
+  },
+  "_id": "PR_23652578822742"
+}

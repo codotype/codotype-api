@@ -118,7 +118,7 @@ app.use(bodyParser.json());
 app.post('/api/generate', (req, res) => {
 
   let buildId = 'blazeplate_generated_' + ObjectId()
-  console.log(buildId);
+  // console.log(buildId);
 
   writeFile(req, buildId).then(() => {
     generateApplication(buildId).then(() => {

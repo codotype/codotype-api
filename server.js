@@ -10,11 +10,11 @@ const port = process.env.PORT || 3000
 
 // // // //
 
-function generateApplication() {
+function generateApplication(buildId) {
 
   return new Promise((resolve, reject) => {
 
-    let args = ['blazeplate', '--appconfig=./build_configs/example_01.json']
+    let args = ['blazeplate', `--appconfig=./build_configs/${buildId}.json`]
     const ls = spawn('yo', args);
 
     ls.stdout.on('data', (data) => {
@@ -28,6 +28,33 @@ function generateApplication() {
     ls.on('close', (code) => {
       return resolve();
     });
+
+
+  });
+
+}
+
+// // // //
+
+
+function sanitizeOutput(buildId) {
+
+  return new Promise((resolve, reject) => {
+    return resolve()
+    // let args = ["'// // // // BLAZEPLATE WHITESPACE\n'", "'\n'", `generated_apps/${buildId}/web_api/server/api/**/*.js`]
+    // const ls = spawn('rexreplace', args);
+
+    // ls.stdout.on('data', (data) => {
+    //   console.log(`stdout: ${data}`);
+    // });
+
+    // ls.stderr.on('data', (data) => {
+    //   console.log(`stderr: ${data}`);
+    // });
+
+    // ls.on('close', (code) => {
+    //   return resolve();
+    // });
 
 
   });
@@ -60,11 +87,10 @@ function scheduleRemoval(removedBuildId, identifier) {
 }
 // // // //
 
-function writeFile (req) {
-  console.log(req.body)
+function writeFile (req, buildId) {
   return new Promise((resolve, reject) => {
 
-    fs.writeFile(__dirname + '/build_configs/example_01.json', JSON.stringify(req.body, null, 2), (err) => {
+    fs.writeFile(__dirname + `/build_configs/${buildId}.json`, JSON.stringify(req.body, null, 2), (err) => {
       if (err) throw err;
       console.log('The file has been saved!');
       return resolve()
@@ -91,70 +117,72 @@ app.use(bodyParser.json());
 // TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
 app.post('/api/generate', (req, res) => {
 
-  let buildId = 'app_' + ObjectId()
-  console.log(buildId);
+  let buildId = 'blazeplate_generated_' + ObjectId()
+  // console.log(buildId);
 
-  writeFile(req).then(() => {
-    generateApplication().then(() => {
-      console.log('Generated Application')
+  writeFile(req, buildId).then(() => {
+    generateApplication(buildId).then(() => {
+      sanitizeOutput(buildId).then(() => {
+        console.log('Generated Application')
 
-      // create a file to stream archive data to.
-      let output = fs.createWriteStream(__dirname + `/generated_zips/${buildId}.zip`);
-      let archive = archiver('zip', {
-        zlib: { level: 9 } // Sets the compression level.
-      });
+        // create a file to stream archive data to.
+        let output = fs.createWriteStream(__dirname + `/generated_zips/${buildId}.zip`);
+        let archive = archiver('zip', {
+          zlib: { level: 9 } // Sets the compression level.
+        });
 
-      // Sends generated zip to client
-      res.writeHead(200, {
-        'Content-Type': 'application/zip',
-        'Content-disposition': `attachment; filename=${buildId}.zip`
-      });
+        // Sends generated zip to client
+        res.writeHead(200, {
+          'Content-Type': 'application/zip',
+          'Content-disposition': `attachment; filename=${buildId}.zip`
+        });
 
-      // Send the file to the page output.
-      archive.pipe(res);
+        // Send the file to the page output.
+        archive.pipe(res);
 
-      // listen for all archive data to be written
-      // 'close' event is fired only when a file descriptor is involved
-      output.on('close', function() {
-        console.log(archive.pointer() + ' total bytes');
-        console.log('archiver has been finalized and the output file descriptor has closed.');
-        scheduleRemoval(buildId, req.body.identifier)
-      });
+        // listen for all archive data to be written
+        // 'close' event is fired only when a file descriptor is involved
+        output.on('close', function() {
+          console.log(archive.pointer() + ' total bytes');
+          console.log('archiver has been finalized and the output file descriptor has closed.');
+          scheduleRemoval(buildId, req.body.identifier)
+        });
 
-      // This event is fired when the data source is drained no matter what was the data source.
-      // It is not part of this library but rather from the NodeJS Stream API.
-      // @see: https://nodejs.org/api/stream.html#stream_event_end
-      output.on('end', function() {
-        console.log('Data has been drained');
-      });
+        // This event is fired when the data source is drained no matter what was the data source.
+        // It is not part of this library but rather from the NodeJS Stream API.
+        // @see: https://nodejs.org/api/stream.html#stream_event_end
+        output.on('end', function() {
+          console.log('Data has been drained');
+        });
 
-      // good practice to catch warnings (ie stat failures and other non-blocking errors)
-      archive.on('warning', function(err) {
-        if (err.code === 'ENOENT') {
-          // log warning
-        } else {
-          // throw error
+        // good practice to catch warnings (ie stat failures and other non-blocking errors)
+        archive.on('warning', function(err) {
+          if (err.code === 'ENOENT') {
+            // log warning
+          } else {
+            // throw error
+            throw err;
+          }
+        });
+
+        // good practice to catch this error explicitly
+        archive.on('error', function(err) {
           throw err;
-        }
+        });
+
+        // pipe archive data to the file
+        archive.pipe(output);
+
+        // append files from a sub-directory, putting its contents at the root of archive
+        // archive.directory(`generated_apps/${buildId}/`, false);
+        // TODO - removed hardcoded app_name
+        archive.directory('generated_apps/' + req.body.identifier, buildId);
+
+        // finalize the archive (ie we are done appending files but streams have to finish yet)
+        // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+        archive.finalize();
+
       });
-
-      // good practice to catch this error explicitly
-      archive.on('error', function(err) {
-        throw err;
-      });
-
-      // pipe archive data to the file
-      archive.pipe(output);
-
-      // append files from a sub-directory, putting its contents at the root of archive
-      // archive.directory(`generated_apps/${buildId}/`, false);
-      // TODO - removed hardcoded app_name
-      archive.directory('generated_apps/' + req.body.identifier, buildId);
-
-      // finalize the archive (ie we are done appending files but streams have to finish yet)
-      // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-      archive.finalize();
-
     });
   });
 

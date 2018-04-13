@@ -14,19 +14,23 @@ function generateApplication(buildId) {
 
   return new Promise((resolve, reject) => {
 
-    let args = ['blazeplate', `--appconfig=./build_configs/${buildId}.json`]
-    const ls = spawn('yo', args);
+    let args = ['blazeplate', `--appconfig=./build/${buildId}/blazeplate.json`, `--buildId=${buildId}`]
+    const cmd = spawn('yo', args);
 
-    ls.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
+    cmd.stdout.on('data', (data) => {
+      // console.log(`stdout: ${data}`);
     });
 
-    ls.stderr.on('data', (data) => {
-      console.log(`stderr: ${data}`);
+    cmd.stderr.on('data', (data) => {
+      // console.log(`stderr: ${data}`);
     });
 
-    ls.on('close', (code) => {
-      return resolve();
+    cmd.on('close', (code) => {
+      if (code === 0) {
+        return resolve();
+      } else {
+        return reject();
+      }
     });
 
 
@@ -37,26 +41,89 @@ function generateApplication(buildId) {
 // // // //
 
 
-function sanitizeOutput(buildId) {
+function sanitizeOutput(buildId, appIdentifier, bplog) {
+
+  // # glob-run js-beautify --max_preserve_newlines 1 -r -s 2 'generated_apps/blazeplate_project/web_api/server/**/*.js'
+
+  // # rexreplace '// // // // BLAZEPLATE WHITESPACE\n' '\n' generated_apps/blazeplate_project/web_api/server/api/**/*.model.js
+  // # rexreplace '// // // // BLAZEPLATE WHITESPACE' '' generated_apps/blazeplate_project/web_api/server/api/**/*.model.js  // # rexreplace '// // // // BLAZEPLATE WHITESPACE' '' generated_apps/blazeplate_project/web_api/server/api/**/index.js
+
+  // # Turns whitespace markers into actual whitespace (SERVER)
+  function runRexReplace(marker) {
+    return new Promise((resolve, reject) => {
+      let args = [marker, "'\n'", `build/${buildId}/${appIdentifier}/web_api/server/api/**/*.js`]
+      const cmd = spawn('rexreplace', args);
+
+      cmd.stdout.on('data', (data) => {
+        console.log(`RXR stdout: ${data}`);
+      });
+
+      // cmd.stderr.on('data', (data) => {
+        // console.log(`stderr: ${data}`);
+      // });
+
+      cmd.on('close', (code) => {
+        if (code === 0) {
+          return resolve();
+        } else {
+          return reject();
+        }
+      });
+
+    });
+  }
+
+  function runJsBeautify() {
+    return new Promise((resolve, reject) => {
+      let args = ['js-beautify', '--max_preserve_newlines 1', '-r', '-s 2', `build/${buildId}/${appIdentifier}/web_api/server/api/**/*.js`]
+      const cmd = spawn('glob-run', args);
+
+      cmd.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      // cmd.stderr.on('data', (data) => {
+        // console.log(`stderr: ${data}`);
+      // });
+
+      cmd.on('close', (code) => {
+        if (code === 0) {
+          return resolve();
+        } else {
+          return reject();
+        }
+      });
+
+    });
+  }
 
   return new Promise((resolve, reject) => {
-    return resolve()
-    // let args = ["'// // // // BLAZEPLATE WHITESPACE\n'", "'\n'", `generated_apps/${buildId}/web_api/server/api/**/*.js`]
-    // const ls = spawn('rexreplace', args);
-
-    // ls.stdout.on('data', (data) => {
-    //   console.log(`stdout: ${data}`);
-    // });
-
-    // ls.stderr.on('data', (data) => {
-    //   console.log(`stderr: ${data}`);
-    // });
-
-    // ls.on('close', (code) => {
-    //   return resolve();
-    // });
-
-
+    bplog('runJsBeautify - start')
+    runJsBeautify()
+    .then(() => {
+      bplog('runJsBeautify - done')
+      runRexReplace("'// // // // BLAZEPLATE WHITESPACE\n'")
+      bplog('RXR - #1 done')
+      .then(() => {
+        runRexReplace("'// // // // BLAZEPLATE WHITESPACE'")
+        bplog('RXR - #2 done')
+        .then(() => {
+          return resolve()
+        })
+        .catch((err) => {
+          bplog('RXR - #1 error')
+          return reject(err)
+        })
+      })
+      .catch((err) => {
+        bplog('RXR - #2 error')
+        return reject(err)
+      })
+    })
+    .catch((err) => {
+      bplog('runJsBeautify - error')
+      return reject(err)
+    })
   });
 
 }
@@ -68,15 +135,22 @@ function scheduleRemoval(removedBuildId, identifier) {
 
   setTimeout(() => {
 
-    // Removed generatd
-    fs.rmdir(__dirname + '/generated_apps/' + identifier, () => {
-      console.log(`Deleted uncompressed: ${removedBuildId}`);
-    })
+    // Removed generated
+    // TODO - this must be fixed. How to do `rm -rf` with Node FS?
+    // fs.rmdir(__dirname + '/build/' + removedBuildId + '/' + identifier, (err) => {
+      // if (err) {
+        // console.log('Error: ', err);
+        // throw err
+        // return
+      // }
+      // console.log(`Deleted uncompressed: ${removedBuildId}`);
+    // })
 
     // Removed compressed zip file
-    fs.unlink(__dirname + `/generated_zips/${removedBuildId}.zip`, (err) => {
+    fs.unlink(__dirname + `/zip/${removedBuildId}.zip`, (err) => {
       if (err) {
         console.log('Error: ', err);
+        throw err
         return
       }
       console.log(`Deleted compressed: ${removedBuildId}.zip`);
@@ -87,12 +161,16 @@ function scheduleRemoval(removedBuildId, identifier) {
 }
 // // // //
 
-function writeFile (req, buildId) {
+function writeBuildManifest (req, buildId) {
   return new Promise((resolve, reject) => {
 
-    fs.writeFile(__dirname + `/build_configs/${buildId}.json`, JSON.stringify(req.body, null, 2), (err) => {
+    // Makes /build/buildId
+    fs.mkdirSync(__dirname + `/build/${buildId}`)
+
+    // Writes blazeplate.json file
+    fs.writeFile(__dirname + `/build/${buildId}/blazeplate.json`, JSON.stringify(req.body, null, 2), (err) => {
       if (err) throw err;
-      console.log('The file has been saved!');
+      // console.log(`Build ${buildId} manfiest saved`);
       return resolve()
     });
 
@@ -117,18 +195,50 @@ app.use(bodyParser.json());
 // TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
 app.post('/api/generate', (req, res) => {
 
-  let buildId = 'blazeplate_generated_' + ObjectId()
-  // console.log(buildId);
+  // Build IDs
+  const buildId = 'app_' + ObjectId()
+  const appIdentifier = req.body.identifier
 
-  writeFile(req, buildId).then(() => {
+  // Log function
+  // TODO - export log file with generated app
+  let buildLog = []
+  function bplog(log) {
+    let date = new Date()
+    buildLog.push([date.toString(), log.toString()].join(' -- '))
+    console.log(log)
+  }
+
+  function catchError () {
+    return function (err) {
+      res.status(500).json({ error: true })
+    }
+  }
+
+  // Writes the manifest file
+  writeBuildManifest(req, buildId).then(() => {
+
+    // Logs manfiest write success
+    bplog(`Build ${buildId} manfiest saved`)
+
+    // Generates application codebase
     generateApplication(buildId).then(() => {
-      sanitizeOutput(buildId).then(() => {
-        console.log('Generated Application')
+
+      // Logs build success
+      bplog(`Build ${buildId} application generated`)
+
+      // Sanitizes the output of the Yoeman generator
+      sanitizeOutput(buildId, appIdentifier, bplog).then(() => {
+
+        // Logs build success
+        bplog(`Build ${buildId} output sanitized`)
+
+        // console.log('Generated Application')
+        // return res.json({ generated: true }).json()
 
         // create a file to stream archive data to.
-        let output = fs.createWriteStream(__dirname + `/generated_zips/${buildId}.zip`);
+        let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
         let archive = archiver('zip', {
-          zlib: { level: 9 } // Sets the compression level.
+          zlib: { level: 9 } // Sets the compression level (?)
         });
 
         // Sends generated zip to client
@@ -143,16 +253,16 @@ app.post('/api/generate', (req, res) => {
         // listen for all archive data to be written
         // 'close' event is fired only when a file descriptor is involved
         output.on('close', function() {
-          console.log(archive.pointer() + ' total bytes');
-          console.log('archiver has been finalized and the output file descriptor has closed.');
-          scheduleRemoval(buildId, req.body.identifier)
+          bplog(archive.pointer() + ' total bytes');
+          bplog('archiver has been finalized and the output file descriptor has closed.');
+          scheduleRemoval(buildId, appIdentifier)
         });
 
         // This event is fired when the data source is drained no matter what was the data source.
         // It is not part of this library but rather from the NodeJS Stream API.
         // @see: https://nodejs.org/api/stream.html#stream_event_end
         output.on('end', function() {
-          console.log('Data has been drained');
+          bplog('Data has been drained');
         });
 
         // good practice to catch warnings (ie stat failures and other non-blocking errors)
@@ -176,15 +286,18 @@ app.post('/api/generate', (req, res) => {
         // append files from a sub-directory, putting its contents at the root of archive
         // archive.directory(`generated_apps/${buildId}/`, false);
         // TODO - removed hardcoded app_name
-        archive.directory('generated_apps/' + req.body.identifier, buildId);
+        archive.directory('build/' + buildId, false);
 
         // finalize the archive (ie we are done appending files but streams have to finish yet)
         // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
         archive.finalize();
 
-      });
-    });
-  });
+      })
+      .catch(catchError())
+    })
+    .catch(catchError())
+  })
+  .catch(catchError())
 
 });
 

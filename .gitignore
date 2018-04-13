@@ -6,12 +6,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Generated Apps & Zips
-generated_apps/**/*
-generated_zips/**/*
-build_configs/*.json
-!generated_zips/.gitkeep
-!generated_apps/.gitkeep
-!build_configs/.gitkeep
+zips/**/*
+build/**/*
+!zips/.gitkeep
+!build/.gitkeep
 
 # Runtime data
 pids

@@ -43,5 +43,5 @@ ln -s /etc/nginx/sites-available/blazeplate /etc/nginx/sites-enabled/blazeplate
 
 # # # # #
 
-root@blazeplate-2vcpu-4gb-nyc1-01:/www# cp /root/blazeplate_web_client/dist/index.html /www/index.html
-root@blazeplate-2vcpu-4gb-nyc1-01:/www# cp -r /root/blazeplate_web_client/dist/static/ /www/
+cp /root/blazeplate_web_client/dist/index.html /www/index.html
+cp -r /root/blazeplate_web_client/dist/static/ /www/

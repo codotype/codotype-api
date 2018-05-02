@@ -14,15 +14,16 @@ function generateApplication(buildId) {
 
   return new Promise((resolve, reject) => {
 
-    let args = ['blazeplate', `--appconfig=./build/${buildId}/blazeplate.json`, `--buildId=${buildId}`]
-    const cmd = spawn('yo', args);
+    // let args = ['blazeplate', `--appconfig=./build/${buildId}/blazeplate.json`, `--buildId=${buildId}`]
+    let args = ['run_blazeplate.sh', buildId]
+    const cmd = spawn('sh', args);
 
     cmd.stdout.on('data', (data) => {
-      // console.log(`stdout: ${data}`);
+      console.log(`stdout: ${data}`);
     });
 
     cmd.stderr.on('data', (data) => {
-      // console.log(`stderr: ${data}`);
+      console.log(`stderr: ${data}`);
     });
 
     cmd.on('close', (code) => {
@@ -102,10 +103,10 @@ function sanitizeOutput(buildId, appIdentifier, bplog) {
     runJsBeautify()
     .then(() => {
       bplog('runJsBeautify - done')
-      runRexReplace("'// // // // BLAZEPLATE WHITESPACE\n'")
+      // runRexReplace("'// // // // BLAZEPLATE WHITESPACE\n'")
       bplog('RXR - #1 done')
       .then(() => {
-        runRexReplace("'// // // // BLAZEPLATE WHITESPACE'")
+        // runRexReplace("'// // // // BLAZEPLATE WHITESPACE'")
         bplog('RXR - #2 done')
         .then(() => {
           return resolve()
@@ -227,73 +228,73 @@ app.post('/api/generate', (req, res) => {
       bplog(`Build ${buildId} application generated`)
 
       // Sanitizes the output of the Yoeman generator
-      sanitizeOutput(buildId, appIdentifier, bplog).then(() => {
+      // sanitizeOutput(buildId, appIdentifier, bplog).then(() => {
 
-        // Logs build success
-        bplog(`Build ${buildId} output sanitized`)
+      // Logs build success
+      bplog(`Build ${buildId} output sanitized`)
 
-        // console.log('Generated Application')
-        // return res.json({ generated: true }).json()
+      // console.log('Generated Application')
+      // return res.json({ generated: true }).json()
 
-        // create a file to stream archive data to.
-        let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
-        let archive = archiver('zip', {
-          zlib: { level: 9 } // Sets the compression level (?)
-        });
+      // create a file to stream archive data to.
+      let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
+      let archive = archiver('zip', {
+        zlib: { level: 9 } // Sets the compression level (?)
+      });
 
-        // Sends generated zip to client
-        res.writeHead(200, {
-          'Content-Type': 'application/zip',
-          'Content-disposition': `attachment; filename=${buildId}.zip`
-        });
+      // Sends generated zip to client
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-disposition': `attachment; filename=${buildId}.zip`
+      });
 
-        // Send the file to the page output.
-        archive.pipe(res);
+      // Send the file to the page output.
+      archive.pipe(res);
 
-        // listen for all archive data to be written
-        // 'close' event is fired only when a file descriptor is involved
-        output.on('close', function() {
-          bplog(archive.pointer() + ' total bytes');
-          bplog('archiver has been finalized and the output file descriptor has closed.');
-          scheduleRemoval(buildId, appIdentifier)
-        });
+      // listen for all archive data to be written
+      // 'close' event is fired only when a file descriptor is involved
+      output.on('close', function() {
+        bplog(archive.pointer() + ' total bytes');
+        bplog('archiver has been finalized and the output file descriptor has closed.');
+        scheduleRemoval(buildId, appIdentifier)
+      });
 
-        // This event is fired when the data source is drained no matter what was the data source.
-        // It is not part of this library but rather from the NodeJS Stream API.
-        // @see: https://nodejs.org/api/stream.html#stream_event_end
-        output.on('end', function() {
-          bplog('Data has been drained');
-        });
+      // This event is fired when the data source is drained no matter what was the data source.
+      // It is not part of this library but rather from the NodeJS Stream API.
+      // @see: https://nodejs.org/api/stream.html#stream_event_end
+      output.on('end', function() {
+        bplog('Data has been drained');
+      });
 
-        // good practice to catch warnings (ie stat failures and other non-blocking errors)
-        archive.on('warning', function(err) {
-          if (err.code === 'ENOENT') {
-            // log warning
-          } else {
-            // throw error
-            throw err;
-          }
-        });
-
-        // good practice to catch this error explicitly
-        archive.on('error', function(err) {
+      // good practice to catch warnings (ie stat failures and other non-blocking errors)
+      archive.on('warning', function(err) {
+        if (err.code === 'ENOENT') {
+          // log warning
+        } else {
+          // throw error
           throw err;
-        });
+        }
+      });
 
-        // pipe archive data to the file
-        archive.pipe(output);
+      // good practice to catch this error explicitly
+      archive.on('error', function(err) {
+        throw err;
+      });
 
-        // append files from a sub-directory, putting its contents at the root of archive
-        // archive.directory(`generated_apps/${buildId}/`, false);
-        // TODO - removed hardcoded app_name
-        archive.directory('build/' + buildId, false);
+      // pipe archive data to the file
+      archive.pipe(output);
 
-        // finalize the archive (ie we are done appending files but streams have to finish yet)
-        // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-        archive.finalize();
+      // append files from a sub-directory, putting its contents at the root of archive
+      // archive.directory(`generated_apps/${buildId}/`, false);
+      // TODO - removed hardcoded app_name
+      archive.directory('build/' + buildId, false);
 
-      })
-      .catch(catchError())
+      // finalize the archive (ie we are done appending files but streams have to finish yet)
+      // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+      archive.finalize();
+
+      // })
+      // .catch(catchError())
     })
     .catch(catchError())
   })

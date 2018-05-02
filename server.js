@@ -10,6 +10,7 @@ const port = process.env.PORT || 3000
 
 // // // //
 
+// Generates application & sanitizes output
 function generateApplication(buildId) {
 
   return new Promise((resolve, reject) => {
@@ -35,96 +36,6 @@ function generateApplication(buildId) {
     });
 
 
-  });
-
-}
-
-// // // //
-
-
-function sanitizeOutput(buildId, appIdentifier, bplog) {
-
-  // # glob-run js-beautify --max_preserve_newlines 1 -r -s 2 'generated_apps/blazeplate_project/web_api/server/**/*.js'
-
-  // # rexreplace '// // // // BLAZEPLATE WHITESPACE\n' '\n' generated_apps/blazeplate_project/web_api/server/api/**/*.model.js
-  // # rexreplace '// // // // BLAZEPLATE WHITESPACE' '' generated_apps/blazeplate_project/web_api/server/api/**/*.model.js  // # rexreplace '// // // // BLAZEPLATE WHITESPACE' '' generated_apps/blazeplate_project/web_api/server/api/**/index.js
-
-  // # Turns whitespace markers into actual whitespace (SERVER)
-  function runRexReplace(marker) {
-    return new Promise((resolve, reject) => {
-      let args = [marker, "'\n'", `build/${buildId}/${appIdentifier}/web_api/server/api/**/*.js`]
-      const cmd = spawn('rexreplace', args);
-
-      cmd.stdout.on('data', (data) => {
-        console.log(`RXR stdout: ${data}`);
-      });
-
-      // cmd.stderr.on('data', (data) => {
-        // console.log(`stderr: ${data}`);
-      // });
-
-      cmd.on('close', (code) => {
-        if (code === 0) {
-          return resolve();
-        } else {
-          return reject();
-        }
-      });
-
-    });
-  }
-
-  function runJsBeautify() {
-    return new Promise((resolve, reject) => {
-      let args = ['js-beautify', '--max_preserve_newlines 1', '-r', '-s 2', `build/${buildId}/${appIdentifier}/web_api/server/api/**/*.js`]
-      const cmd = spawn('glob-run', args);
-
-      cmd.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-
-      // cmd.stderr.on('data', (data) => {
-        // console.log(`stderr: ${data}`);
-      // });
-
-      cmd.on('close', (code) => {
-        if (code === 0) {
-          return resolve();
-        } else {
-          return reject();
-        }
-      });
-
-    });
-  }
-
-  return new Promise((resolve, reject) => {
-    bplog('runJsBeautify - start')
-    runJsBeautify()
-    .then(() => {
-      bplog('runJsBeautify - done')
-      // runRexReplace("'// // // // BLAZEPLATE WHITESPACE\n'")
-      bplog('RXR - #1 done')
-      .then(() => {
-        // runRexReplace("'// // // // BLAZEPLATE WHITESPACE'")
-        bplog('RXR - #2 done')
-        .then(() => {
-          return resolve()
-        })
-        .catch((err) => {
-          bplog('RXR - #1 error')
-          return reject(err)
-        })
-      })
-      .catch((err) => {
-        bplog('RXR - #2 error')
-        return reject(err)
-      })
-    })
-    .catch((err) => {
-      bplog('runJsBeautify - error')
-      return reject(err)
-    })
   });
 
 }
@@ -184,7 +95,7 @@ function writeBuildManifest (req, buildId) {
 // Express.js App & Configuration
 const app = express();
 
-// print the request log on console
+// Print the request log on console
 // app.use(morgan('dev'));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
@@ -194,6 +105,7 @@ app.use(bodyParser.json());
 
 // Serves static VueJS build
 // TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
+// Right now it's written to a file and generated from that - it would be best to minimize filesystem manipulation
 app.post('/api/generate', (req, res) => {
 
   // Build IDs
@@ -225,16 +137,7 @@ app.post('/api/generate', (req, res) => {
     generateApplication(buildId).then(() => {
 
       // Logs build success
-      bplog(`Build ${buildId} application generated`)
-
-      // Sanitizes the output of the Yoeman generator
-      // sanitizeOutput(buildId, appIdentifier, bplog).then(() => {
-
-      // Logs build success
-      bplog(`Build ${buildId} output sanitized`)
-
-      // console.log('Generated Application')
-      // return res.json({ generated: true }).json()
+      bplog(`Build ${buildId} application generated & sanitized`)
 
       // create a file to stream archive data to.
       let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
@@ -293,8 +196,6 @@ app.post('/api/generate', (req, res) => {
       // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
       archive.finalize();
 
-      // })
-      // .catch(catchError())
     })
     .catch(catchError())
   })

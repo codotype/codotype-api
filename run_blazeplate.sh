@@ -1,20 +1,20 @@
 
 # Start Prompt
-echo BUILDING APP: $1
+sudo echo BUILDING APP: $1
 
 # Blazeplate generate
-yo blazeplate --force --appconfig=./build/$1/blazeplate.json --buildId=$1
+sudo yo blazeplate --force --appconfig=./build/$1/blazeplate.json --buildId=$1
 
 # JS Beautify
-echo JS-BEAUTIFY WEB_API
-glob-run js-beautify --max_preserve_newlines 1 -r -s 2 "build/$1/**/web_api/server/**/*.js"
+sudo echo JS-BEAUTIFY WEB_API
+sudo glob-run js-beautify --max_preserve_newlines 1 -r -s 2 "build/$1/**/web_api/server/**/*.js"
 
-echo Replace Blazeplate whitespace markers
+sudo echo Replace Blazeplate whitespace markers
 
 # This one works the best!
-grep -rl 'BLAZEPLATE WHITESPACE' ./build/$1/ | xargs sed -i 's/\/\/ \/\/ \/\/ \/\/ BLAZEPLATE WHITESPACE//g'
+sudo grep -rl 'BLAZEPLATE WHITESPACE' ./build/$1/ | xargs sed -i 's/\/\/ \/\/ \/\/ \/\/ BLAZEPLATE WHITESPACE//g'
 
-echo Done replacing whitespace markers
+sudo echo Done replacing whitespace markers
 
 # # # # #
 

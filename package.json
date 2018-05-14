@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "archiver": "^2.1.1",
+    "blazeplate_generator": "git+https://github.com/Blazeplate/blazeplate_generator.git",
     "body-parser": "^1.18.2",
     "bson-objectid": "^1.2.2",
     "express": "^4.16.2",

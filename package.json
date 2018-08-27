@@ -1,17 +1,16 @@
 {
-  "name": "blazeplate_generator_api",
+  "name": "codotype-api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "nodemon -L ./server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --exit"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "archiver": "^2.1.1",
-    "blazeplate_generator": "git+https://github.com/Blazeplate/blazeplate_generator.git",
     "body-parser": "^1.18.2",
     "bson-objectid": "^1.2.2",
     "express": "^4.16.2",

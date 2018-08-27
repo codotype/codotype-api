@@ -5,18 +5,22 @@ const express = require('express')
 const archiver = require('archiver')
 const ObjectId = require('bson-objectid')
 const bodyParser = require('body-parser')
-const BlazeplateGenerator = require('blazeplate_generator/generators/app')
+const Codotype = require('@codotype/codotype-generator')
+
+// TODO - remove this example after testing
+const LibraryExampleApp = require('@codotype/codotype-generator/examples/library.json')
 
 const port = process.env.PORT || 3000
 
 // // // //
 
-// Invoke Blazeplate generator
-async function generateApplication(appconfig, buildId) {
-  return new BlazeplateGenerator({
-    appconfig: appconfig,
-    buildId: buildId
-  }).write()
+// Instantiates Codotype runtime and executes build
+async function generateApplication({ app, build }) {
+  // Invoke runtime directly with parameters
+  const runtime = new Codotype.runtime()
+
+  // Executes the build
+  return runtime.execute({ app, build })
 }
 
 // // // //
@@ -128,18 +132,39 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-async function handleRequest(req, res, appconfig, buildId) {
-  await generateApplication(appconfig, buildId)
-  return zipBuild(buildId, res)
+// // // //
+
+async function handleRequest(req, res) {
+  const buildId = 'app_' + ObjectId() + '/'
+
+  // TODO - remove hardcoded Library app
+  const app = LibraryExampleApp
+
+  // TODO - remove this hardcoded build configuration
+  // TODO - add buildId to this build configuration
+  const build = {
+    stages: [{
+      project_path: 'nuxt_app',
+      generator_path: './node_modules/codotype-generator-nuxt/generator',
+      configuration: {},
+    }]
+  }
+
+  // console.log(app)
+  console.log(build)
+
+  //
+  await generateApplication({ app, build })
+  // return zipBuild(buildId, res)
 }
 
 // Serves static VueJS build
 // TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
 // Right now it's written to a file and generated from that - it would be best to minimize filesystem manipulation
 app.post('/api/generate', (req, res) => {
-  const buildId = 'blazeplate_' + ObjectId()
-  const appconfig = req.body
-  return handleRequest(req, res, appconfig, buildId)
+  // const appconfig = req.body
+  // if (!appconfig) return res.status(401).json({ err: 'No app template' })
+  return handleRequest(req, res)
 });
 
 // // // //
@@ -148,3 +173,19 @@ app.post('/api/generate', (req, res) => {
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })
+
+// // // //
+
+// const build = {
+//   stages: [{
+//     project_path: 'nuxt_app', // TODO - pull this from the generator
+//     generator_path: './generator', // TODO - pull this from codotype-meta.json, potentially refactor this approach?
+//     configuration: {}, // TODO - this will be populated by the UI
+//   }]
+// }
+
+// Invoke runtime directly with parameters
+// const runtime = new Codotype.runtime()
+
+// Executes the build
+// runtime.execute({ app, build })

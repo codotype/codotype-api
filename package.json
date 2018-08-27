@@ -10,9 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@codotype/codotype-generator": "^0.1.0",
     "archiver": "^2.1.1",
     "body-parser": "^1.18.2",
     "bson-objectid": "^1.2.2",
+    "codotype-generator-nuxt": "git+https://github.com/codotype/codotype-generator-nuxt.git",
     "express": "^4.16.2",
     "install": "^0.10.2",
     "morgan": "^1.9.0",

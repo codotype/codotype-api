@@ -15,76 +15,74 @@ const port = process.env.PORT || 3000
 // // // //
 
 // Instantiates Codotype runtime and executes build
-async function generateApplication({ app, build }) {
+async function generateApplication({ build }) {
   // Invoke runtime directly with parameters
   const runtime = new Codotype.runtime()
 
   // Executes the build
-  return runtime.execute({ app, build })
+  return runtime.execute({ build })
 }
 
 // // // //
 
-function zipBuild (buildId, res) {
+// compressBuild
+// Zips the build's files
+function compressBuild ({ build }) {
+  return new Promise((resolve, reject) => {
+    // Logs build success
+    // bplog(`Build ${buildId} application generated & sanitized`)
 
-  // Logs build success
-  // bplog(`Build ${buildId} application generated & sanitized`)
+    // Pulls build id
+    const { id } = build
 
-  // create a file to stream archive data to.
-  let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
-  let archive = archiver('zip', {
-    zlib: { level: 9 } // Sets the compression level (?)
-  });
+    // create a file to stream archive data to.
+    let output = fs.createWriteStream(__dirname + `/zip/${id}.zip`);
+    let archive = archiver('zip', {
+      zlib: { level: 9 } // Sets the compression level (?)
+    });
 
-  // Sends generated zip to client
-  res.writeHead(200, {
-    'Content-Type': 'application/zip',
-    'Content-disposition': `attachment; filename=${buildId}.zip`
-  });
+    // listen for all archive data to be written
+    // 'close' event is fired only when a file descriptor is involved
+    output.on('close', function() {
+      // bplog(archive.pointer() + ' total bytes');
+      // bplog('archiver has been finalized and the output file descriptor has closed.');
+      // scheduleRemoval(buildId, appIdentifier)
+      return resolve();
+    });
 
-  // Send the file to the page output.
-  archive.pipe(res);
+    // This event is fired when the data source is drained no matter what was the data source.
+    // It is not part of this library but rather from the NodeJS Stream API.
+    // @see: https://nodejs.org/api/stream.html#stream_event_end
+    output.on('end', function() {
+      // bplog('Data has been drained');
+    });
 
-  // listen for all archive data to be written
-  // 'close' event is fired only when a file descriptor is involved
-  output.on('close', function() {
-    // bplog(archive.pointer() + ' total bytes');
-    // bplog('archiver has been finalized and the output file descriptor has closed.');
-    // scheduleRemoval(buildId, appIdentifier)
-  });
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    archive.on('warning', function(err) {
+      if (err.code === 'ENOENT') {
+        // log warning
+      } else {
+        // throw error
+        throw err;
+      }
+    });
 
-  // This event is fired when the data source is drained no matter what was the data source.
-  // It is not part of this library but rather from the NodeJS Stream API.
-  // @see: https://nodejs.org/api/stream.html#stream_event_end
-  output.on('end', function() {
-    // bplog('Data has been drained');
-  });
-
-  // good practice to catch warnings (ie stat failures and other non-blocking errors)
-  archive.on('warning', function(err) {
-    if (err.code === 'ENOENT') {
-      // log warning
-    } else {
-      // throw error
+    // good practice to catch this error explicitly
+    archive.on('error', function(err) {
       throw err;
-    }
-  });
+      return reject(err);
+    });
 
-  // good practice to catch this error explicitly
-  archive.on('error', function(err) {
-    throw err;
-  });
+    // pipe archive data to the file
+    archive.pipe(output);
 
-  // pipe archive data to the file
-  archive.pipe(output);
+    // append files from a sub-directory, putting its contents at the root of archive
+    archive.directory(__dirname + `/build/${id}/`, false);
 
-  // append files from a sub-directory, putting its contents at the root of archive
-  archive.directory(__dirname + `/build/${buildId}/`, false);
-
-  // finalize the archive (ie we are done appending files but streams have to finish yet)
-  // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-  archive.finalize();
-
+    // finalize the archive (ie we are done appending files but streams have to finish yet)
+    // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+    return archive.finalize();
+  })
 }
 
 // // // //
@@ -135,14 +133,14 @@ app.use(bodyParser.json());
 // // // //
 
 async function handleRequest(req, res) {
-  const buildId = 'app_' + ObjectId() + '/'
-
-  // TODO - remove hardcoded Library app
-  const app = LibraryExampleApp
+  const build_id = 'app_' + ObjectId()
 
   // TODO - remove this hardcoded build configuration
   // TODO - add buildId to this build configuration
+  // TODO - remove hardcoded Library app
   const build = {
+    id: build_id,
+    app: LibraryExampleApp,
     stages: [{
       project_path: 'nuxt_app',
       generator_path: './node_modules/codotype-generator-nuxt/generator',
@@ -150,24 +148,30 @@ async function handleRequest(req, res) {
     }]
   }
 
-  // console.log(app)
-  console.log(build)
+  // console.log(build)
 
-  //
-  await generateApplication({ app, build })
-  // return zipBuild(buildId, res)
+  // Generates the application
+  await generateApplication({ build })
+  await compressBuild({ build })
+  // TODO - send zip to client here
+
+  // // // //
+  // Sends generated zip to client
+  // res.writeHead(200, {
+  //   'Content-Type': 'application/zip',
+  //   'Content-disposition': `attachment; filename=${buildId}.zip`
+  // });
+
+  // Send the file to the page output.
+  // archive.pipe(res);
+  res.send({ foo: 'bar' })
+  // // // //
 }
 
-// Serves static VueJS build
-// TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
-// Right now it's written to a file and generated from that - it would be best to minimize filesystem manipulation
-app.post('/api/generate', (req, res) => {
-  // const appconfig = req.body
-  // if (!appconfig) return res.status(401).json({ err: 'No app template' })
-  return handleRequest(req, res)
-});
 
 // // // //
+
+app.post('/api/generate', handleRequest)
 
 // Starts Express app
 app.listen(port, () => {

@@ -17,6 +17,10 @@ const port = process.env.PORT || 3000
 // Instantiates Codotype runtime and executes build
 async function generateApplication({ build }) {
   // Invoke runtime directly with parameters
+  // TODO - instantiate runtime OUTSIDE of this function
+  // TODO - register generators to the runtime instance (can be hardcoded)
+  // TODO - implement runtime.registerGenerator()
+  // TODO - implement runtime.getRegisteredGenerators()
   const runtime = new Codotype.runtime()
 
   // Executes the build
@@ -153,9 +157,13 @@ async function handleRequest(req, res) {
   // Generates the application
   await generateApplication({ build })
   await compressBuild({ build })
-  // TODO - send zip to client here
 
   // // // //
+  // TODO - write build manifest to file
+  // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
+  // TODO - send zip to client
+  // TODO - purge old builds && zips
+
   // Sends generated zip to client
   // res.writeHead(200, {
   //   'Content-Type': 'application/zip',
@@ -164,16 +172,23 @@ async function handleRequest(req, res) {
 
   // Send the file to the page output.
   // archive.pipe(res);
-  res.send({ foo: 'bar' })
+  res.send({ build })
   // // // //
 }
 
 
 // // // //
 
+// TODO - add a controller and some more structure to this app
+// POST /api/generate
 app.post('/api/generate', handleRequest)
 
+// GET /api/generators
+// TODO - implement this endpoint
+// app.get('/api/generators', controller.getGenerators)
+
 // Starts Express app
+// TODO - can we run this app as a serverless function?
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })
@@ -181,6 +196,7 @@ app.listen(port, () => {
 // // // //
 
 // const build = {
+//   app: app,
 //   stages: [{
 //     project_path: 'nuxt_app', // TODO - pull this from the generator
 //     generator_path: './generator', // TODO - pull this from codotype-meta.json, potentially refactor this approach?
@@ -192,4 +208,4 @@ app.listen(port, () => {
 // const runtime = new Codotype.runtime()
 
 // Executes the build
-// runtime.execute({ app, build })
+// runtime.execute({ build })

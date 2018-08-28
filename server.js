@@ -189,6 +189,8 @@ app.post('/api/generate', handleRequest)
 
 // Starts Express app
 // TODO - can we run this app as a serverless function?
+// TODO - add a postman collection & environment to this repo
+// TODO - create GitHub issues for these TODOs
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })

@@ -17,6 +17,7 @@
     "codotype-generator-nuxt": "git+https://github.com/codotype/codotype-generator-nuxt.git",
     "express": "^4.16.2",
     "install": "^0.10.2",
+    "lodash": "^4.17.10",
     "morgan": "^1.9.0",
     "npm": "^5.6.0"
   }

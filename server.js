@@ -6,6 +6,7 @@ const archiver = require('archiver')
 const ObjectId = require('bson-objectid')
 const bodyParser = require('body-parser')
 const Codotype = require('@codotype/codotype-generator')
+const omit = require('lodash/omit');
 
 // TODO - remove this example after testing
 const LibraryExampleApp = require('@codotype/codotype-generator/examples/library.json')
@@ -14,16 +15,33 @@ const port = process.env.PORT || 3000
 
 // // // //
 
-// Instantiates Codotype runtime and executes build
-async function generateApplication({ build }) {
-  // Invoke runtime directly with parameters
-  // TODO - instantiate runtime OUTSIDE of this function
-  // TODO - register generators to the runtime instance (can be hardcoded)
-  // TODO - implement runtime.registerGenerator()
-  // TODO - implement runtime.getRegisteredGenerators()
-  const runtime = new Codotype.runtime()
+// Instantiates Codotype runtime
+const runtime = new Codotype.runtime()
 
+// TODO - generator registration should happen in the codotype runtime
+const NuxtGenerator = require('codotype-generator-nuxt/codotype-generator-meta.json')
+
+// TODO - this should be encapsulated in the Codotype runtime
+// TODO - instantiate runtime OUTSIDE of this function
+// TODO - register generators to the runtime instance (can be hardcoded)
+// TODO - implement runtime.registerGenerator()
+// TODO - implement runtime.getRegisteredGenerators()
+
+// TODO - runtime.registerGenerator(NuxtGenerator)
+// OR
+// TODO - runtime.registerGenerator('codotype-generator-nuxt') <-- THIS
+const generatorRegistry = [
+  {
+    ...NuxtGenerator,
+    generator_path: './node_modules/codotype-generator-nuxt/generator'
+  }
+]
+// // // //
+
+// Executes build
+async function generateApplication({ build }) {
   // Executes the build
+  // Invoke runtime directly with parameters
   return runtime.execute({ build })
 }
 
@@ -184,8 +202,10 @@ async function handleRequest(req, res) {
 app.post('/api/generate', handleRequest)
 
 // GET /api/generators
-// TODO - implement this endpoint
-// app.get('/api/generators', controller.getGenerators)
+// TODO - change `generatorRegistry` to runtime.getGenerators()
+app.get('/api/generators', (req, res) => {
+  return res.send(generatorRegistry.map(g => omit(g, 'generator_path')))
+})
 
 // Starts Express app
 // TODO - can we run this app as a serverless function?
@@ -197,17 +217,26 @@ app.listen(port, () => {
 
 // // // //
 
+// TODO - return this to the front-end
+// generatorRegistry.map(g => omit(g, 'generator_path'))
+
+// Whats sent to the server:
 // const build = {
 //   app: app,
 //   stages: [{
-//     project_path: 'nuxt_app', // TODO - pull this from the generator
-//     generator_path: './generator', // TODO - pull this from codotype-meta.json, potentially refactor this approach?
+//     generator_id: 'NUXT_GENERATOR_ID',
 //     configuration: {}, // TODO - this will be populated by the UI
 //   }]
 // }
 
-// Invoke runtime directly with parameters
-// const runtime = new Codotype.runtime()
-
-// Executes the build
-// runtime.execute({ build })
+// What we do to that request:
+// TODO - the runtime should handle most of this stiching
+// const build = {
+//   app: inflate({ app }),
+//   stages: [{
+//     generator_id: 'NUXT_GENERATOR_ID',
+//     project_path: 'nuxt_app', // TODO - this gets pulled from the generator registry (hardcoded for now)
+//     generator_path: './generator', // TODO - this gets pulled from codotype-meta.json, potentially refactor this approach?
+//     configuration: {}, // TODO - this will be populated by the UI
+//   }]
+// }

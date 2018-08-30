@@ -5,82 +5,91 @@ const express = require('express')
 const archiver = require('archiver')
 const ObjectId = require('bson-objectid')
 const bodyParser = require('body-parser')
-const BlazeplateGenerator = require('blazeplate_generator/generators/app')
+const CodotypeRuntime = require('@codotype/runtime')
+const omit = require('lodash/omit');
 
+// TODO - remove this example after testing
+const LibraryExampleApp = require('@codotype/generator/examples/library.json')
+
+// TODO - add .env & .env.example files, dotenv library
 const port = process.env.PORT || 3000
 
 // // // //
 
-// Invoke Blazeplate generator
-async function generateApplication(appconfig, buildId) {
-  return new BlazeplateGenerator({
-    appconfig: appconfig,
-    buildId: buildId
-  }).write()
+// Instantiates Codotype runtime
+const runtime = new CodotypeRuntime()
+
+// Registers generators
+runtime.registerGenerator('codotype-generator-nuxt');
+
+// // // //
+
+// Executes build
+async function generateApplication({ build }) {
+  // Executes the build
+  // Invoke runtime directly with parameters
+  return runtime.execute({ build })
 }
 
 // // // //
 
-function zipBuild (buildId, res) {
+// compressBuild
+// Zips the build's files
+function compressBuild ({ build }) {
+  return new Promise((resolve, reject) => {
+    // Logs build success
+    // bplog(`Build ${buildId} application generated & sanitized`)
 
-  // Logs build success
-  // bplog(`Build ${buildId} application generated & sanitized`)
+    // Pulls build id
+    const { id } = build
 
-  // create a file to stream archive data to.
-  let output = fs.createWriteStream(__dirname + `/zip/${buildId}.zip`);
-  let archive = archiver('zip', {
-    zlib: { level: 9 } // Sets the compression level (?)
-  });
+    // create a file to stream archive data to.
+    let output = fs.createWriteStream(__dirname + `/zip/${id}.zip`);
+    let archive = archiver('zip', {
+      zlib: { level: 9 } // Sets the compression level (?)
+    });
 
-  // Sends generated zip to client
-  res.writeHead(200, {
-    'Content-Type': 'application/zip',
-    'Content-disposition': `attachment; filename=${buildId}.zip`
-  });
+    // listen for all archive data to be written
+    // 'close' event is fired only when a file descriptor is involved
+    output.on('close', function() {
+      // bplog(archive.pointer() + ' total bytes');
+      // bplog('archiver has been finalized and the output file descriptor has closed.');
+      return resolve();
+    });
 
-  // Send the file to the page output.
-  archive.pipe(res);
+    // This event is fired when the data source is drained no matter what was the data source.
+    // It is not part of this library but rather from the NodeJS Stream API.
+    // @see: https://nodejs.org/api/stream.html#stream_event_end
+    output.on('end', function() {
+      // bplog('Data has been drained');
+    });
 
-  // listen for all archive data to be written
-  // 'close' event is fired only when a file descriptor is involved
-  output.on('close', function() {
-    // bplog(archive.pointer() + ' total bytes');
-    // bplog('archiver has been finalized and the output file descriptor has closed.');
-    // scheduleRemoval(buildId, appIdentifier)
-  });
+    // good practice to catch warnings (ie stat failures and other non-blocking errors)
+    archive.on('warning', function(err) {
+      if (err.code === 'ENOENT') {
+        // log warning
+      } else {
+        // throw error
+        throw err;
+      }
+    });
 
-  // This event is fired when the data source is drained no matter what was the data source.
-  // It is not part of this library but rather from the NodeJS Stream API.
-  // @see: https://nodejs.org/api/stream.html#stream_event_end
-  output.on('end', function() {
-    // bplog('Data has been drained');
-  });
-
-  // good practice to catch warnings (ie stat failures and other non-blocking errors)
-  archive.on('warning', function(err) {
-    if (err.code === 'ENOENT') {
-      // log warning
-    } else {
-      // throw error
+    // good practice to catch this error explicitly
+    archive.on('error', function(err) {
       throw err;
-    }
-  });
+      return reject(err);
+    });
 
-  // good practice to catch this error explicitly
-  archive.on('error', function(err) {
-    throw err;
-  });
+    // pipe archive data to the file
+    archive.pipe(output);
 
-  // pipe archive data to the file
-  archive.pipe(output);
+    // append files from a sub-directory, putting its contents at the root of archive
+    archive.directory(__dirname + `/build/${id}/`, false);
 
-  // append files from a sub-directory, putting its contents at the root of archive
-  archive.directory(__dirname + `/build/${buildId}/`, false);
-
-  // finalize the archive (ie we are done appending files but streams have to finish yet)
-  // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-  archive.finalize();
-
+    // finalize the archive (ie we are done appending files but streams have to finish yet)
+    // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+    return archive.finalize();
+  })
 }
 
 // // // //
@@ -128,23 +137,71 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-async function handleRequest(req, res, appconfig, buildId) {
-  await generateApplication(appconfig, buildId)
-  return zipBuild(buildId, res)
+// // // //
+
+async function handleRequest(req, res) {
+  const build_id = 'app_' + ObjectId()
+
+  // TODo - pull build parameters from req.body
+  // TODO - remove this hardcoded build configuration
+  // TODO - remove hardcoded Library app
+  const build = {
+    id: build_id,
+    app: LibraryExampleApp,
+    stages: [{
+      generator_id: 'codotype-generator-nuxt',
+      configuration: {}
+    }]
+  }
+
+  // console.log(build)
+
+  // Generates the application
+  await generateApplication({ build })
+  await compressBuild({ build })
+
+  // // // //
+  // TODO - write build manifest to file
+  // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
+  // TODO - send zip to client
+  // TODO - purge old builds && zips
+
+  // Sends generated zip to client
+  // res.writeHead(200, {
+  //   'Content-Type': 'application/zip',
+  //   'Content-disposition': `attachment; filename=${buildId}.zip`
+  // });
+
+  // Send the file to the page output.
+  // archive.pipe(res);
+  res.send({ build })
+  // // // //
 }
 
-// Serves static VueJS build
-// TODO - handle BODY json - anyway to invoke a Yoeman generator directly?
-// Right now it's written to a file and generated from that - it would be best to minimize filesystem manipulation
-app.post('/api/generate', (req, res) => {
-  const buildId = 'blazeplate_' + ObjectId()
-  const appconfig = req.body
-  return handleRequest(req, res, appconfig, buildId)
-});
 
 // // // //
 
+// TODO - add a controller and some more structure to this app
+// POST /api/generate
+// Whats sent to the server:
+// const build = {
+//   app: app,
+//   stages: [{
+//     generator_id: 'NUXT_GENERATOR_ID',
+//     configuration: {}, // TODO - this will be populated by the UI
+//   }]
+// }
+app.post('/api/generate', handleRequest)
+
+// GET /api/generators
+app.get('/api/generators', (req, res) => {
+  return res.send(runtime.getGenerators().map(g => omit(g, 'generator_path')))
+})
+
 // Starts Express app
+// TODO - can we run this app as a serverless function?
+// TODO - add a postman collection & environment to this repo
+// TODO - create GitHub issues for these TODOs
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })

@@ -1,6 +1,6 @@
 {
   "name": "codotype-api",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,13 +8,13 @@
     "test": "mocha --exit"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "@codotype/codotype-generator": "^0.1.0",
+    "@codotype/generator": "^0.1.1",
+    "@codotype/runtime": "^0.1.3",
     "archiver": "^2.1.1",
     "body-parser": "^1.18.2",
     "bson-objectid": "^1.2.2",
-    "codotype-generator-nuxt": "git+https://github.com/codotype/codotype-generator-nuxt.git",
     "express": "^4.16.2",
     "install": "^0.10.2",
     "lodash": "^4.17.10",

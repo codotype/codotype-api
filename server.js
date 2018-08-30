@@ -5,21 +5,25 @@ const express = require('express')
 const archiver = require('archiver')
 const ObjectId = require('bson-objectid')
 const bodyParser = require('body-parser')
-const Codotype = require('@codotype/codotype-generator')
+const CodotypeRuntime = require('@codotype/runtime')
 const omit = require('lodash/omit');
 
 // TODO - remove this example after testing
-const LibraryExampleApp = require('@codotype/codotype-generator/examples/library.json')
+const LibraryExampleApp = require('@codotype/generator/examples/library.json')
 
+// TODO - add .env & .env.example files, dotenv library
 const port = process.env.PORT || 3000
 
 // // // //
 
 // Instantiates Codotype runtime
-const runtime = new Codotype.runtime()
+const runtime = new CodotypeRuntime()
+
+// Registers generators
+runtime.registerGenerator('codotype-generator-nuxt');
 
 // TODO - generator registration should happen in the codotype runtime
-const NuxtGenerator = require('codotype-generator-nuxt/codotype-generator-meta.json')
+// const NuxtGenerator = require('codotype-generator-nuxt/codotype-generator-meta.json')
 
 // TODO - this should be encapsulated in the Codotype runtime
 // TODO - instantiate runtime OUTSIDE of this function
@@ -30,12 +34,12 @@ const NuxtGenerator = require('codotype-generator-nuxt/codotype-generator-meta.j
 // TODO - runtime.registerGenerator(NuxtGenerator)
 // OR
 // TODO - runtime.registerGenerator('codotype-generator-nuxt') <-- THIS
-const generatorRegistry = [
-  {
-    ...NuxtGenerator,
-    generator_path: './node_modules/codotype-generator-nuxt/generator'
-  }
-]
+// const generatorRegistry = [
+//   {
+//     ...NuxtGenerator,
+//     generator_path: './node_modules/codotype-generator-nuxt/generator'
+//   }
+// ]
 // // // //
 
 // Executes build
@@ -158,15 +162,13 @@ async function handleRequest(req, res) {
   const build_id = 'app_' + ObjectId()
 
   // TODO - remove this hardcoded build configuration
-  // TODO - add buildId to this build configuration
   // TODO - remove hardcoded Library app
   const build = {
     id: build_id,
     app: LibraryExampleApp,
     stages: [{
-      project_path: 'nuxt_app',
-      generator_path: './node_modules/codotype-generator-nuxt/generator',
-      configuration: {},
+      generator_id: 'codotype-generator-nuxt',
+      configuration: {}
     }]
   }
 
@@ -204,7 +206,7 @@ app.post('/api/generate', handleRequest)
 // GET /api/generators
 // TODO - change `generatorRegistry` to runtime.getGenerators()
 app.get('/api/generators', (req, res) => {
-  return res.send(generatorRegistry.map(g => omit(g, 'generator_path')))
+  return res.send(runtime.getGenerators().map(g => omit(g, 'generator_path')))
 })
 
 // Starts Express app
@@ -217,26 +219,11 @@ app.listen(port, () => {
 
 // // // //
 
-// TODO - return this to the front-end
-// generatorRegistry.map(g => omit(g, 'generator_path'))
-
 // Whats sent to the server:
 // const build = {
 //   app: app,
 //   stages: [{
 //     generator_id: 'NUXT_GENERATOR_ID',
-//     configuration: {}, // TODO - this will be populated by the UI
-//   }]
-// }
-
-// What we do to that request:
-// TODO - the runtime should handle most of this stiching
-// const build = {
-//   app: inflate({ app }),
-//   stages: [{
-//     generator_id: 'NUXT_GENERATOR_ID',
-//     project_path: 'nuxt_app', // TODO - this gets pulled from the generator registry (hardcoded for now)
-//     generator_path: './generator', // TODO - this gets pulled from codotype-meta.json, potentially refactor this approach?
 //     configuration: {}, // TODO - this will be populated by the UI
 //   }]
 // }

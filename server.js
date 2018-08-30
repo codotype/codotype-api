@@ -22,24 +22,6 @@ const runtime = new CodotypeRuntime()
 // Registers generators
 runtime.registerGenerator('codotype-generator-nuxt');
 
-// TODO - generator registration should happen in the codotype runtime
-// const NuxtGenerator = require('codotype-generator-nuxt/codotype-generator-meta.json')
-
-// TODO - this should be encapsulated in the Codotype runtime
-// TODO - instantiate runtime OUTSIDE of this function
-// TODO - register generators to the runtime instance (can be hardcoded)
-// TODO - implement runtime.registerGenerator()
-// TODO - implement runtime.getRegisteredGenerators()
-
-// TODO - runtime.registerGenerator(NuxtGenerator)
-// OR
-// TODO - runtime.registerGenerator('codotype-generator-nuxt') <-- THIS
-// const generatorRegistry = [
-//   {
-//     ...NuxtGenerator,
-//     generator_path: './node_modules/codotype-generator-nuxt/generator'
-//   }
-// ]
 // // // //
 
 // Executes build
@@ -72,7 +54,6 @@ function compressBuild ({ build }) {
     output.on('close', function() {
       // bplog(archive.pointer() + ' total bytes');
       // bplog('archiver has been finalized and the output file descriptor has closed.');
-      // scheduleRemoval(buildId, appIdentifier)
       return resolve();
     });
 
@@ -161,6 +142,7 @@ app.use(bodyParser.json());
 async function handleRequest(req, res) {
   const build_id = 'app_' + ObjectId()
 
+  // TODo - pull build parameters from req.body
   // TODO - remove this hardcoded build configuration
   // TODO - remove hardcoded Library app
   const build = {
@@ -201,10 +183,17 @@ async function handleRequest(req, res) {
 
 // TODO - add a controller and some more structure to this app
 // POST /api/generate
+// Whats sent to the server:
+// const build = {
+//   app: app,
+//   stages: [{
+//     generator_id: 'NUXT_GENERATOR_ID',
+//     configuration: {}, // TODO - this will be populated by the UI
+//   }]
+// }
 app.post('/api/generate', handleRequest)
 
 // GET /api/generators
-// TODO - change `generatorRegistry` to runtime.getGenerators()
 app.get('/api/generators', (req, res) => {
   return res.send(runtime.getGenerators().map(g => omit(g, 'generator_path')))
 })
@@ -216,14 +205,3 @@ app.get('/api/generators', (req, res) => {
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })
-
-// // // //
-
-// Whats sent to the server:
-// const build = {
-//   app: app,
-//   stages: [{
-//     generator_id: 'NUXT_GENERATOR_ID',
-//     configuration: {}, // TODO - this will be populated by the UI
-//   }]
-// }

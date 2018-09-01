@@ -11,7 +11,7 @@ const omit = require('lodash/omit');
 // TODO - remove this example after testing
 const LibraryExampleApp = require('@codotype/generator/examples/library.json')
 
-// TODO - add .env & .env.example files, dotenv library
+// TODO - add .env & .env.example files, dotenv librargsy
 const port = process.env.PORT || 3000
 
 // // // //
@@ -21,6 +21,9 @@ const runtime = new CodotypeRuntime()
 
 // Registers generators
 runtime.registerGenerator('codotype-generator-nuxt');
+runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
+runtime.registerGenerator('codotype-react-generator');
+runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
 
 // // // //
 

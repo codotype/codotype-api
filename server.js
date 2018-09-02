@@ -21,9 +21,9 @@ const runtime = new CodotypeRuntime()
 
 // Registers generators
 runtime.registerGenerator('codotype-generator-nuxt');
-runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
-runtime.registerGenerator('codotype-react-generator');
-runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
+// runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
+// runtime.registerGenerator('codotype-react-generator');
+// runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
 
 // // // //
 
@@ -36,6 +36,10 @@ async function generateApplication({ build }) {
 
 // // // //
 
+function zipFilename(id) {
+  return __dirname + `/zip/${id}.zip`
+}
+
 // compressBuild
 // Zips the build's files
 function compressBuild ({ build }) {
@@ -47,7 +51,7 @@ function compressBuild ({ build }) {
     const { id } = build
 
     // create a file to stream archive data to.
-    let output = fs.createWriteStream(__dirname + `/zip/${id}.zip`);
+    let output = fs.createWriteStream(zipFilename(id));
     let archive = archiver('zip', {
       zlib: { level: 9 } // Sets the compression level (?)
     });
@@ -57,6 +61,7 @@ function compressBuild ({ build }) {
     output.on('close', function() {
       // bplog(archive.pointer() + ' total bytes');
       // bplog('archiver has been finalized and the output file descriptor has closed.');
+      console.log('ZIP COMPLETE')
       return resolve();
     });
 
@@ -133,7 +138,6 @@ function scheduleRemoval(removedBuildId, identifier) {
 const app = express();
 
 // Print the request log on console
-// app.use(morgan('dev'));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
 // parse JSON and url-encoded query
@@ -143,48 +147,30 @@ app.use(bodyParser.json());
 // // // //
 
 async function handleRequest(req, res) {
+  // Generates unique build ID
   const build_id = 'app_' + ObjectId()
 
-  // TODo - pull build parameters from req.body
-  // TODO - remove this hardcoded build configuration
-  // TODO - remove hardcoded Library app
-  const build = {
-    id: build_id,
-    app: LibraryExampleApp,
-    stages: [{
-      generator_id: 'codotype-generator-nuxt',
-      configuration: {}
-    }]
-  }
-
-  // console.log(build)
+  // Pulls build from req.body
+  // TODO - verify build.app && build.stages
+  const { build } = req.body
+  build.id = build_id
 
   // Generates the application
+  // TODO - wrap this in an error hander?
   await generateApplication({ build })
   await compressBuild({ build })
 
-  // // // //
+  // Responds with the zipped build
+  res.sendFile(zipFilename(build.id))
+
   // TODO - write build manifest to file
   // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
-  // TODO - send zip to client
   // TODO - purge old builds && zips
-
-  // Sends generated zip to client
-  // res.writeHead(200, {
-  //   'Content-Type': 'application/zip',
-  //   'Content-disposition': `attachment; filename=${buildId}.zip`
-  // });
-
-  // Send the file to the page output.
-  // archive.pipe(res);
-  res.send({ build })
-  // // // //
 }
 
 
 // // // //
 
-// TODO - add a controller and some more structure to this app
 // POST /api/generate
 // Whats sent to the server:
 // const build = {
@@ -205,6 +191,7 @@ app.get('/api/generators', (req, res) => {
 // TODO - can we run this app as a serverless function?
 // TODO - add a postman collection & environment to this repo
 // TODO - create GitHub issues for these TODOs
+// TODO - add a controller and some more structure to this app
 app.listen(port, () => {
     console.log(`Express is running on port ${port}`)
 })

@@ -8,9 +8,6 @@ const bodyParser = require('body-parser')
 const CodotypeRuntime = require('@codotype/runtime')
 const omit = require('lodash/omit');
 
-// TODO - remove this example after testing
-const LibraryExampleApp = require('@codotype/generator/examples/library.json')
-
 // TODO - add .env & .env.example files, dotenv librargsy
 const port = process.env.PORT || 3000
 

@@ -7,6 +7,7 @@ const ObjectId = require('bson-objectid')
 const bodyParser = require('body-parser')
 const CodotypeRuntime = require('@codotype/runtime')
 const omit = require('lodash/omit');
+const serverless = require('serverless-http');
 
 // TODO - add .env & .env.example files, dotenv librargsy
 const port = process.env.PORT || 3000
@@ -18,9 +19,9 @@ const runtime = new CodotypeRuntime()
 
 // Registers generators
 runtime.registerGenerator('codotype-generator-nuxt');
-// runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
+runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
 // runtime.registerGenerator('codotype-react-generator');
-// runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
+runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
 
 // // // //
 
@@ -189,6 +190,8 @@ app.get('/api/generators', (req, res) => {
 // TODO - add a postman collection & environment to this repo
 // TODO - create GitHub issues for these TODOs
 // TODO - add a controller and some more structure to this app
-app.listen(port, () => {
-    console.log(`Express is running on port ${port}`)
-})
+// app.listen(port, () => {
+//     console.log(`Express is running on port ${port}`)
+// })
+
+module.exports.handler = serverless(app);

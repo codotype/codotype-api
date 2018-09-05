@@ -3,7 +3,7 @@ version: "3"
 services:
 
   blazeplate:
-    container_name: blazeplate_generator_api
+    container_name: codotype_generator_api
     build: ./
     # restart_policy:
       # condition: any

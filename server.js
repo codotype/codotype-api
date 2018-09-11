@@ -1,27 +1,30 @@
-const fs = require('fs')
-const { spawn } = require('child_process')
-const morgan = require('morgan')
-const express = require('express')
-const archiver = require('archiver')
-const ObjectId = require('bson-objectid')
-const bodyParser = require('body-parser')
-const CodotypeRuntime = require('@codotype/runtime')
+const fs = require('fs');
+const { spawn } = require('child_process');
+const morgan = require('morgan');
+const express = require('express');
+const archiver = require('archiver');
+const ObjectId = require('bson-objectid');
+const bodyParser = require('body-parser');
+const CodotypeRuntime = require('@codotype/runtime');
 const omit = require('lodash/omit');
-const serverless = require('serverless-http');
 
 // TODO - add .env & .env.example files, dotenv librargsy
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3000;
 
 // // // //
 
 // Instantiates Codotype runtime
-const runtime = new CodotypeRuntime()
+const runtime = new CodotypeRuntime();
 
 // Registers generators
-runtime.registerGenerator('codotype-generator-nuxt');
-runtime.registerGenerator('codotype-vuejs-vuex-bootstrap-generator');
-// runtime.registerGenerator('codotype-react-generator');
-runtime.registerGenerator('codotype-nodejs-express-mongodb-generator');
+// TODO - update @codotype/runtime and update registerGenerator method calls
+// TODO - this should be abstracted into a separate configuration file
+// Ideally the runtime would be encapsulated in a docker container to separate things cleanly
+// TODO - a database should be added to track how many times each generator has been run
+runtime.registerGenerator({ module_path: 'codotype-react-generator' });
+runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
+runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
 
 // // // //
 
@@ -35,7 +38,7 @@ async function generateApplication({ build }) {
 // // // //
 
 function zipFilename(id) {
-  return __dirname + `/zip/${id}.zip`
+  return __dirname + `/zip/${id}.zip`;
 }
 
 // compressBuild
@@ -190,8 +193,11 @@ app.get('/api/generators', (req, res) => {
 // TODO - add a postman collection & environment to this repo
 // TODO - create GitHub issues for these TODOs
 // TODO - add a controller and some more structure to this app
-// app.listen(port, () => {
-//     console.log(`Express is running on port ${port}`)
-// })
+app.listen(port, () => {
+  console.log(`Express is running on port ${port}`)
+})
 
-module.exports.handler = serverless(app);
+// // // //
+
+// const serverless = require('serverless-http');
+// module.exports.handler = serverless(app);

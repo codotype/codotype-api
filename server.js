@@ -11,8 +11,8 @@ const AWS = require('aws-sdk');
 
 // // // //
 
-// Pulls S3_BUCKET_NAME
-const { S3_BUCKET_NAME } = process.env;
+// Pulls S3 bucket names
+const { S3_ZIPS_BUCKET_NAME, S3_JSON_BUCKET_NAME } = process.env;
 
 // AWS SDK Configuration
 AWS.config.update({
@@ -50,8 +50,36 @@ async function generateApplication({ build }) {
 
 // // // //
 
+// Uploads a build manifest to S3
+function uploadBuildToS3(build) {
+
+  console.log('Uploading build JSON to S3...');
+
+  return new Promise((resolve, reject) => {
+
+    // Stringifies the JSON build object
+    const data = JSON.stringify(build, null, 2)
+    const key = build.id + '.json'
+
+    // Uploads to S3
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
+    s3Client.upload({
+      Bucket: S3_JSON_BUCKET_NAME,
+      Key: key,
+      Body: new Buffer(data, 'binary'), // Encodes to Base64
+      ACL: 'public-read', // TODO - should be private
+      ContentType: 'application/json' // Sets correct ContentType so the ZIP can be downloaded automatically
+    }, (err, resp) => {
+      if (err) return reject(err);
+      console.log('Successfully uploaded JSON to S3');
+      return resolve(resp);
+    });
+
+  });
+}
+
 // Uploads a file to S3 bucket
-function uploadFileToS3(filename) {
+function uploadFileToS3(filename, key) {
 
   console.log('Uploading to S3...');
 
@@ -64,8 +92,8 @@ function uploadFileToS3(filename) {
       // Uploads to S3
       // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
       s3Client.upload({
-        Bucket: S3_BUCKET_NAME,
-        Key: filename,
+        Bucket: S3_ZIPS_BUCKET_NAME,
+        Key: key,
         Body: new Buffer(data, 'binary'), // Encodes to Base64
         ACL: 'public-read',
         ContentType: 'application/zip' // Sets correct ContentType so the ZIP can be downloaded automatically
@@ -81,13 +109,13 @@ function uploadFileToS3(filename) {
 }
 
 // Retreives a file from S3
-function getSignedDownloadUrl(filename) {
+function getSignedDownloadUrl(key) {
   return new Promise((resolve, reject) => {
 
     // Defines params for s3Client.getObject
     const getObjectOptions = {
-     Bucket: S3_BUCKET_NAME,
-     Key: filename
+     Bucket: S3_ZIPS_BUCKET_NAME,
+     Key: key
     };
 
     // Attempts to get the uploaded file from S3
@@ -219,16 +247,19 @@ async function handleRequest(req, res) {
   // Generates unique build ID
   const build_id = 'app_' + ObjectId()
 
-  // Pulls build from req.body
   // TODO - verify build.app && build.stages
   // TODO - rename build.app to build.blueprint
   // TODO - write build manifest to file
   // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
   // TODO - purge old builds && zips
 
+  // Pulls build from req.body
   // const { build } = req.body
   // build.id = build_id
 
+  // // // //
+
+  // TODO - remove this example after testing
   const LibraryExampleApp = require('@codotype/generator/examples/library.json')
 
   const build = {
@@ -240,6 +271,8 @@ async function handleRequest(req, res) {
     }]
   }
 
+  // // // //
+
   // Generates the application
   // TODO - wrap this in an error hander?
   await generateApplication({ build })
@@ -248,12 +281,18 @@ async function handleRequest(req, res) {
   // Pulls filename for zipped build
   const filename = zipFilename(build.id)
 
-  // Uploads the renamed filing download to S3
-  await uploadFileToS3(filename);
+  // Defines key for storage in S3
+  const key = filename.split('/').pop();
 
-  // Send the signed URL to the uploaded file
-  const download_url = await getSignedDownloadUrl(filename);
-  return res.json({ download_url });
+  // Uploads the renamed filing download to S3
+  await uploadFileToS3(filename, key);
+
+  // Send the signed URL to the client to download zipped build
+  const download_url = await getSignedDownloadUrl(key);
+  res.json({ download_url });
+
+  // Writes the build manifest and sends the result to S3
+  uploadBuildToS3(build)
 
   // Responds with the zipped build (old)
   // return res.sendFile(zipFilename(build.id))

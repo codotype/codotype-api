@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { spawn } = require('child_process');
 const morgan = require('morgan');
 const express = require('express');
 const archiver = require('archiver');
@@ -7,9 +6,22 @@ const ObjectId = require('bson-objectid');
 const bodyParser = require('body-parser');
 const CodotypeRuntime = require('@codotype/runtime');
 const omit = require('lodash/omit');
+const AWS = require('aws-sdk');
 
-// TODO - add .env & .env.example files, dotenv librargsy
+// TODO - add .env & .env.example files, dotenv library
 const port = process.env.PORT || 3000;
+
+// // // //
+
+// AWS SDK Configuration
+// TODO - pull env variables with dot-env library
+AWS.config.update({
+  accessKeyId: 'AWS_ACCESS_KEY_ID_GOES_HERE',
+  secretAccessKey: 'AWS_SECRET_ACCESS_KEY_GOES_HERE'
+});
+
+// Instantiates new S3 Client
+const s3Client = new AWS.S3();
 
 // // // //
 
@@ -23,7 +35,8 @@ const runtime = new CodotypeRuntime();
 // TODO - a database should be added to track how many times each generator has been run
 runtime.registerGenerator({ module_path: 'codotype-react-generator' });
 runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
-runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
+// runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
 runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
 
 // // // //
@@ -36,6 +49,88 @@ async function generateApplication({ build }) {
 }
 
 // // // //
+
+// Helper function to create an S3 bucket
+// Requests to upload files to a bucket will fail if it doesn't already exist
+function createBucket() {
+  return new Promise((resolve, reject) => {
+
+    // Defines parameters for new S3 bucket
+    const params = {
+     Bucket: S3_BUCKET_NAME,
+     CreateBucketConfiguration: {
+      LocationConstraint: "eu-west-1"
+     }
+    };
+
+    // Creates bucket
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#createBucket-property
+    // Resolves sucessfully if the bucket has already been created
+    s3Client.createBucket(params, (err, data) => {
+      if (err) {
+        if (err.code === S3_BUCKET_CREATED_CODE) return resolve()
+        return reject()
+      }
+      return resolve()
+    });
+
+  })
+}
+
+// Uploads a file to S3 bucket
+function uploadFileToS3(filename) {
+
+  console.log('Uploading to S3...');
+
+  return new Promise((resolve, reject) => {
+
+    // Read in the file, convert it to base64, store to S3
+    fs.readFile(filename, (err, data) => {
+      if (err) { throw err; }
+
+      // Uploads to S3
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
+      s3Client.upload({
+        Bucket: S3_BUCKET_NAME,
+        Key: filename,
+        Body: new Buffer(data, 'binary'), // Encodes to Base64
+        ACL: 'public-read',
+        ContentType: 'application/pdf' // Sets correct ContentType so the PDF can be viewed in chrome via URL
+      }, (err, resp) => {
+        if (err) return reject(err);
+        console.log('Successfully uploaded PDF to S3');
+        return resolve(resp);
+      });
+
+    });
+
+  });
+}
+
+// Retreives a file from S3
+function getSignedDownloadUrl(filename) {
+  return new Promise((resolve, reject) => {
+
+    // Defines params for s3Client.getObject
+    const getObjectOptions = {
+     Bucket: S3_BUCKET_NAME,
+     Key: filename
+    };
+
+    // Attempts to get the uploaded file from S3
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getObject-property
+    s3Client.getObject(getObjectOptions, (err, data) => {
+      // File does not exist in S3 bucket
+      if (err) return resolve(false);
+
+      // If the file DOES exist, returns a signed URL to the uploaded S3 object
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getSignedUrl-property
+      const url = s3Client.getSignedUrl('getObject', getObjectOptions);
+      return resolve(url)
+
+    });
+  });
+}
 
 function zipFilename(id) {
   return __dirname + `/zip/${id}.zip`;
@@ -153,6 +248,7 @@ async function handleRequest(req, res) {
 
   // Pulls build from req.body
   // TODO - verify build.app && build.stages
+  // TODO - rename build.app to build.blueprint
   const { build } = req.body
   build.id = build_id
 
@@ -162,11 +258,29 @@ async function handleRequest(req, res) {
   await compressBuild({ build })
 
   // Responds with the zipped build
-  res.sendFile(zipFilename(build.id))
+  return res.sendFile(zipFilename(build.id))
 
   // TODO - write build manifest to file
   // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
   // TODO - purge old builds && zips
+
+  // // // //
+  // S3 Scratch Pad
+
+  // Ensures S3 bucket has been created
+  // TODO - this should be moved into a separate function
+  // It's just here to ensure no matter what, the S3 bucket will exist when we need it
+  // await createBucket();
+
+  // Uploads the renamed filing download to S3
+  // await uploadFileToS3(filename);
+
+  // Send the signed URL to the uploaded file
+  // zipUrl = await getSignedDownloadUrl(filename);
+  // return res.json({ zipUrl });
+
+  // // // //
+
 }
 
 

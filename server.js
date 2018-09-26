@@ -11,6 +11,9 @@ const AWS = require('aws-sdk');
 
 // // // //
 
+// Pulls S3_BUCKET_NAME
+const { S3_BUCKET_NAME } = process.env;
+
 // AWS SDK Configuration
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -30,11 +33,11 @@ const runtime = new CodotypeRuntime();
 // TODO - this should be abstracted into a separate configuration file
 // Ideally the runtime would be encapsulated in a docker container to separate things cleanly
 // TODO - a database should be added to track how many times each generator has been run
-runtime.registerGenerator({ module_path: 'codotype-react-generator' });
-runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
+// runtime.registerGenerator({ module_path: 'codotype-react-generator' });
+// runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
 // runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
 runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
+// runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
 
 // // // //
 
@@ -46,33 +49,6 @@ async function generateApplication({ build }) {
 }
 
 // // // //
-
-// Helper function to create an S3 bucket
-// Requests to upload files to a bucket will fail if it doesn't already exist
-function createBucket() {
-  return new Promise((resolve, reject) => {
-
-    // Defines parameters for new S3 bucket
-    const params = {
-     Bucket: S3_BUCKET_NAME,
-     CreateBucketConfiguration: {
-      LocationConstraint: "eu-west-1"
-     }
-    };
-
-    // Creates bucket
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#createBucket-property
-    // Resolves sucessfully if the bucket has already been created
-    s3Client.createBucket(params, (err, data) => {
-      if (err) {
-        if (err.code === S3_BUCKET_CREATED_CODE) return resolve()
-        return reject()
-      }
-      return resolve()
-    });
-
-  })
-}
 
 // Uploads a file to S3 bucket
 function uploadFileToS3(filename) {
@@ -92,10 +68,10 @@ function uploadFileToS3(filename) {
         Key: filename,
         Body: new Buffer(data, 'binary'), // Encodes to Base64
         ACL: 'public-read',
-        ContentType: 'application/pdf' // Sets correct ContentType so the PDF can be viewed in chrome via URL
+        ContentType: 'application/zip' // Sets correct ContentType so the ZIP can be downloaded automatically
       }, (err, resp) => {
         if (err) return reject(err);
-        console.log('Successfully uploaded PDF to S3');
+        console.log('Successfully uploaded ZIP to S3');
         return resolve(resp);
       });
 
@@ -246,37 +222,41 @@ async function handleRequest(req, res) {
   // Pulls build from req.body
   // TODO - verify build.app && build.stages
   // TODO - rename build.app to build.blueprint
-  const { build } = req.body
-  build.id = build_id
+  // TODO - write build manifest to file
+  // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
+  // TODO - purge old builds && zips
+
+  // const { build } = req.body
+  // build.id = build_id
+
+  const LibraryExampleApp = require('@codotype/generator/examples/library.json')
+
+  const build = {
+    id: build_id,
+    app: LibraryExampleApp,
+    stages: [{
+      generator_id: 'codotype-generator-vuejs-vuex-bootstrap',
+      configuration: {}
+    }]
+  }
 
   // Generates the application
   // TODO - wrap this in an error hander?
   await generateApplication({ build })
   await compressBuild({ build })
 
-  // Responds with the zipped build
-  return res.sendFile(zipFilename(build.id))
-
-  // TODO - write build manifest to file
-  // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
-  // TODO - purge old builds && zips
-
-  // // // //
-  // S3 Scratch Pad
-
-  // Ensures S3 bucket has been created
-  // TODO - this should be moved into a separate function
-  // It's just here to ensure no matter what, the S3 bucket will exist when we need it
-  // await createBucket();
+  // Pulls filename for zipped build
+  const filename = zipFilename(build.id)
 
   // Uploads the renamed filing download to S3
-  // await uploadFileToS3(filename);
+  await uploadFileToS3(filename);
 
   // Send the signed URL to the uploaded file
-  // zipUrl = await getSignedDownloadUrl(filename);
-  // return res.json({ zipUrl });
+  const download_url = await getSignedDownloadUrl(filename);
+  return res.json({ download_url });
 
-  // // // //
+  // Responds with the zipped build (old)
+  // return res.sendFile(zipFilename(build.id))
 
 }
 

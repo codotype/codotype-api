@@ -1,3 +1,4 @@
+require('dotenv').config();
 const fs = require('fs');
 const morgan = require('morgan');
 const express = require('express');
@@ -8,16 +9,12 @@ const CodotypeRuntime = require('@codotype/runtime');
 const omit = require('lodash/omit');
 const AWS = require('aws-sdk');
 
-// TODO - add .env & .env.example files, dotenv library
-const port = process.env.PORT || 3000;
-
 // // // //
 
 // AWS SDK Configuration
-// TODO - pull env variables with dot-env library
 AWS.config.update({
-  accessKeyId: 'AWS_ACCESS_KEY_ID_GOES_HERE',
-  secretAccessKey: 'AWS_SECRET_ACCESS_KEY_GOES_HERE'
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 
 // Instantiates new S3 Client
@@ -301,6 +298,11 @@ app.post('/api/generate', handleRequest)
 app.get('/api/generators', (req, res) => {
   return res.send(runtime.getGenerators().map(g => omit(g, 'generator_path')))
 })
+
+// // // //
+
+// Port configuration (move to bottom, not needed with serverless)
+const port = process.env.PORT || 3000;
 
 // Starts Express app
 // TODO - can we run this app as a serverless function?

@@ -254,24 +254,8 @@ async function handleRequest(req, res) {
   // TODO - purge old builds && zips
 
   // Pulls build from req.body
-  // const { build } = req.body
-  // build.id = build_id
-
-  // // // //
-
-  // TODO - remove this example after testing
-  const LibraryExampleApp = require('@codotype/generator/examples/library.json')
-
-  const build = {
-    id: build_id,
-    app: LibraryExampleApp,
-    stages: [{
-      generator_id: 'codotype-generator-vuejs-vuex-bootstrap',
-      configuration: {}
-    }]
-  }
-
-  // // // //
+  const { build } = req.body
+  build.id = build_id
 
   // Generates the application
   // TODO - wrap this in an error hander?
@@ -291,11 +275,11 @@ async function handleRequest(req, res) {
   const download_url = await getSignedDownloadUrl(key);
   res.json({ download_url });
 
-  // Writes the build manifest and sends the result to S3
-  uploadBuildToS3(build)
-
   // Responds with the zipped build (old)
   // return res.sendFile(zipFilename(build.id))
+
+  // Writes the build manifest and sends the result to S3
+  uploadBuildToS3(build)
 
 }
 

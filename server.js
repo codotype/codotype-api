@@ -36,7 +36,9 @@ const runtime = new CodotypeRuntime();
 // runtime.registerGenerator({ module_path: 'codotype-react-generator' });
 // runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
 // runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
+// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ relative_path: './registered_generators/codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ relative_path: './registered_generators/codotype-nodejs-express-mongodb-generator' });
 // runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
 
 // // // //
@@ -110,6 +112,7 @@ function uploadFileToS3(filename, key) {
 
 // Retreives a file from S3
 function getSignedDownloadUrl(key) {
+  console.log('Getting signed S3 url');
   return new Promise((resolve, reject) => {
 
     // Defines params for s3Client.getObject
@@ -166,7 +169,7 @@ function compressBuild ({ build }) {
     // It is not part of this library but rather from the NodeJS Stream API.
     // @see: https://nodejs.org/api/stream.html#stream_event_end
     output.on('end', function() {
-      // bplog('Data has been drained');
+      bplog('Data has been drained');
     });
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)

@@ -6,9 +6,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Generated Apps & Zips
-zips/**/*
+zip/**/*
 build/**/*
-!zips/.gitkeep
+!zip/.gitkeep
 !build/.gitkeep
 
 # Runtime data
@@ -63,3 +63,6 @@ typings/
 # dotenv environment variables file
 .env
 
+# ignored generator repositories
+registered_generators/**/*
+!registered_generators/.gitkeep

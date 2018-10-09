@@ -1,22 +1,29 @@
 {
-  "name": "blazeplate_generator_api",
-  "version": "1.0.0",
+  "name": "codotype-api",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "nodemon -L ./server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --exit"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
+    "@codotype/runtime": "^0.4.0",
     "archiver": "^2.1.1",
-    "blazeplate_generator": "git+https://github.com/Blazeplate/blazeplate_generator.git",
+    "aws-sdk": "^2.322.0",
     "body-parser": "^1.18.2",
     "bson-objectid": "^1.2.2",
+    "dotenv": "^6.0.0",
     "express": "^4.16.2",
-    "install": "^0.10.2",
+    "lodash": "^4.17.10",
     "morgan": "^1.9.0",
-    "npm": "^5.6.0"
+    "npm": "^5.6.0",
+    "serverless-http": "^1.6.0"
+  },
+  "devDependencies": {
+    "@codotype/blueprints": "^0.1.0",
+    "serverless-offline": "^3.25.10"
   }
 }

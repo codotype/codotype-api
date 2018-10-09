@@ -2,8 +2,8 @@ version: "3"
 
 services:
 
-  blazeplate:
-    container_name: codotype_generator_api
+  codotype:
+    container_name: codotype-api
     build: ./
     # restart_policy:
       # condition: any

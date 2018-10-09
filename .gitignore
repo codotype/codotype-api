@@ -63,3 +63,6 @@ typings/
 # dotenv environment variables file
 .env
 
+# ignored generator repositories
+registered_generators/**/*
+!registered_generators/.gitkeep

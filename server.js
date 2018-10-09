@@ -37,9 +37,8 @@ const runtime = new CodotypeRuntime();
 // runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
 // runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
 // runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ relative_path: './registered_generators/codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ relative_path: './registered_generators/codotype-nodejs-express-mongodb-generator' });
-// runtime.registerGenerator({ module_path: 'codotype-nodejs-express-mongodb-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-nodejs-express-mongodb-generator' });
 
 // // // //
 
@@ -292,7 +291,7 @@ async function handleRequest(req, res) {
 // POST /api/generate
 // Whats sent to the server:
 // const build = {
-//   app: app,
+//   blueprint: blueprint,
 //   stages: [{
 //     generator_id: 'NUXT_GENERATOR_ID',
 //     configuration: {}, // TODO - this will be populated by the UI

@@ -23,7 +23,7 @@
     "serverless-http": "^1.6.0"
   },
   "devDependencies": {
-    "@codotype/blueprints": "^0.1.0",
+    "@codotype/blueprints": "^0.2.0",
     "serverless-offline": "^3.25.10"
   }
 }

@@ -18,7 +18,7 @@ RUN npm install https://github.com/codotype/codotype-vuejs-vuex-bootstrap-genera
 RUN npm install https://github.com/codotype/codotype-nodejs-express-mongodb-generator.git
 RUN npm install https://github.com/codotype/codotype-postman-collection-generator.git
 RUN npm install https://github.com/codotype/codotype-python-falcon-mongodb-generator.git
-RUN npm install https://github.com/codotype/codotype-mongodb-dataworker.git
+RUN npm install https://github.com/codotype/codotype-mongodb-scripts-generator.git
 
 # Serve the app
 # CMD ["sudo", "node", "server.js"]

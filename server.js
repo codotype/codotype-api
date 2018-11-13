@@ -5,9 +5,9 @@ const express = require('express');
 const archiver = require('archiver');
 const ObjectId = require('bson-objectid');
 const bodyParser = require('body-parser');
-const CodotypeRuntime = require('@codotype/runtime');
 const omit = require('lodash/omit');
 const AWS = require('aws-sdk');
+const runtime = require('./runtime')
 
 // // // //
 
@@ -22,23 +22,6 @@ AWS.config.update({
 
 // Instantiates new S3 Client
 const s3Client = new AWS.S3();
-
-// // // //
-
-// Instantiates Codotype runtime
-const runtime = new CodotypeRuntime();
-
-// Registers generators
-// TODO - update @codotype/runtime and update registerGenerator method calls
-// TODO - this should be abstracted into a separate configuration file
-// Ideally the runtime would be encapsulated in a docker container to separate things cleanly
-// TODO - a database should be added to track how many times each generator has been run
-// runtime.registerGenerator({ module_path: 'codotype-react-generator' });
-// runtime.registerGenerator({ module_path: 'codotype-generator-nuxt' });
-// runtime.registerGenerator({ module_path: 'codotype-vuejs-vuex-bootstrap-generator' });
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ relative_path: './node_modules/codotype-vuejs-vuex-bootstrap-generator' });
-runtime.registerGenerator({ relative_path: './node_modules/codotype-nodejs-express-mongodb-generator' });
 
 // // // //
 
@@ -201,38 +184,6 @@ function compressBuild ({ build }) {
 
 // // // //
 
-function scheduleRemoval(removedBuildId, identifier) {
-  const REMOVAL_TIMEOUT = 5000
-
-  setTimeout(() => {
-
-    // Removed generated
-    // TODO - this must be fixed. How to do `rm -rf` with Node FS?
-    // fs.rmdir(__dirname + '/build/' + removedBuildId + '/' + identifier, (err) => {
-      // if (err) {
-        // console.log('Error: ', err);
-        // throw err
-        // return
-      // }
-      // console.log(`Deleted uncompressed: ${removedBuildId}`);
-    // })
-
-    // Removed compressed zip file
-    // fs.unlink(__dirname + `/zip/${removedBuildId}.zip`, (err) => {
-    //   if (err) {
-    //     console.log('Error: ', err);
-    //     throw err
-    //     return
-    //   }
-    //   console.log(`Deleted compressed: ${removedBuildId}.zip`);
-    // })
-
-  }, REMOVAL_TIMEOUT)
-
-}
-
-// // // //
-
 // Express.js App & Configuration
 const app = express();
 
@@ -250,7 +201,6 @@ async function handleRequest(req, res) {
   const build_id = 'app_' + ObjectId()
 
   // TODO - verify build.app && build.stages
-  // TODO - rename build.app to build.blueprint
   // TODO - write build manifest to file
   // TODO - write build manifest to database / S3 <- S3 might be the easiest option short-term
   // TODO - purge old builds && zips
@@ -276,9 +226,6 @@ async function handleRequest(req, res) {
   // Send the signed URL to the client to download zipped build
   const download_url = await getSignedDownloadUrl(key);
   res.json({ download_url });
-
-  // Responds with the zipped build (old)
-  // return res.sendFile(zipFilename(build.id))
 
   // Writes the build manifest and sends the result to S3
   uploadBuildToS3(build)

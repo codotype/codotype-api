@@ -7,13 +7,11 @@ const runtime = new CodotypeRuntime();
 
 // Registers generators
 // Ideally the runtime would be encapsulated in a docker container to separate things cleanly
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-vuejs-vuex-bootstrap-generator' });
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-nodejs-express-mongodb-generator' });
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-postman-collection-generator' });
-runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-python-falcon-mongodb-generator' });
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-mongodb-dataworker' });
-// runtime.registerGenerator({ absolute_path: '/home/aeksco/code/codotype/codotype/packages/codotype-hackathon-starter' });
-// runtime.registerGenerator({ module_path: 'codotype-mongodb-dataworker' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-vuejs-vuex-bootstrap-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-nodejs-express-mongodb-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-postman-collection-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-python-falcon-mongodb-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-mongodb-dataworker' });
 
 // // // //
 

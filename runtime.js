@@ -11,7 +11,7 @@ runtime.registerGenerator({ relative_path: './node_modules/codotype-vuejs-vuex-b
 runtime.registerGenerator({ relative_path: './node_modules/codotype-nodejs-express-mongodb-generator' });
 runtime.registerGenerator({ relative_path: './node_modules/codotype-postman-collection-generator' });
 runtime.registerGenerator({ relative_path: './node_modules/codotype-python-falcon-mongodb-generator' });
-runtime.registerGenerator({ relative_path: './node_modules/codotype-mongodb-dataworker' });
+runtime.registerGenerator({ relative_path: './node_modules/codotype-mongodb-scripts-generator' });
 
 // // // //
 

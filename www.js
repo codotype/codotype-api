@@ -1,12 +1,23 @@
+require('dotenv').config();
 
-// TODO - add .env & .env.example files, dotenv librargsy
 const port = process.env.PORT || 3000
+const runtime = require('./runtime')
+const server = require('@codotype/api/lib/server')
+
+// Configures API to run as a standalone Express app
+const app = server({
+  port,
+  runtime,
+  zipBuild: true,
+  uploadZipToS3: true,
+  generateBuildId: true
+})
 
 // Starts Express app
-// TODO - can we run this app as a serverless function?
-// TODO - add a postman collection & environment to this repo
-// TODO - create GitHub issues for these TODOs
-// TODO - add a controller and some more structure to this app
+// CLEANUP - add a postman collection & environment to this repo
+// CLEANUP - can we run this app as a serverless function?
+// CLEANUP - create GitHub issues for these TODOs
+// CLEANUP - split this out into a separate library
 app.listen(port, () => {
-    console.log(`Express is running on port ${port}`)
+  console.log(`Codotype Express.js app is running on port ${port}`)
 })

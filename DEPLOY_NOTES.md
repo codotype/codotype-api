@@ -17,29 +17,35 @@ sudo chmod +x /usr/local/bin/docker-compose
 # # # # #
 
 # echo "\nInstalling Node.js..."
+# TODO - install Note@11.x
+# TODO - install Yarn globally?
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install -y nodejs
 sudo apt-get install -y build-essential
 
 # # # # #
-server {
 
+server {
   listen 80;
-  server_name alpha.blazeplate.io;
+  server_name alpha.codotype.io;
   charset utf-8;
 
-  # Max body size of 1GB
-  client_max_body_size 1000M;
+  # Max body size of 100mb
+  client_max_body_size 100M;
 
+  # Nginx configuration to work with Vue.Router History mode
+  # Doc: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
   location / {
-     root /www;
-   }
+    root /www;
+    try_files $uri $uri/ /index.html;
+  }
 }
+
 # # # # #
 
-touch /etc/nginx/sites-available/blazeplate
+touch /etc/nginx/sites-available/codotype
 
-ln -s /etc/nginx/sites-available/blazeplate /etc/nginx/sites-enabled/blazeplate
+ln -s /etc/nginx/sites-available/codotype /etc/nginx/sites-enabled/codotype
 
 # # # # #
 

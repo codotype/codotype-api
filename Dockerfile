@@ -11,11 +11,14 @@ COPY ./ /app
 
 # Change to the app directory
 # Installs dependencies for the app
-# Pulls generator repositories
 WORKDIR /app
 RUN npm install
-RUN npm install https://github.com/codotype/codotype-mevn-generator.git
+
+# Installs generators from GitHub repositories
+RUN npm install https://github.com/codotype/codotype-hackathon-starter.git
+RUN npm install https://github.com/codotype/codotype-vuejs-simple-generator.git
 # RUN npm install https://github.com/codotype/codotype-vuejs-vuex-bootstrap-generator.git
+# RUN npm install https://github.com/codotype/codotype-mevn-generator.git
 # RUN npm install https://github.com/codotype/codotype-nodejs-express-mongodb-generator.git
 # RUN npm install https://github.com/codotype/codotype-postman-collection-generator.git
 # RUN npm install https://github.com/codotype/codotype-python-falcon-mongodb-generator.git

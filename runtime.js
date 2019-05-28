@@ -22,6 +22,7 @@ const runtime = new CodotypeRuntime();
 // Registers packaged generators for production deployment
 runtime.registerGenerator({ relative_path: './node_modules/@codotype/codotype-hackathon-starter' });
 runtime.registerGenerator({ relative_path: './node_modules/@codotype/codotype-vuejs-simple-generator' });
+runtime.registerGenerator({ relative_path: './node_modules/@codotype/codotype-nodejs-express-mongodb-generator' });
 
 // // // //
 

@@ -15,7 +15,7 @@ const runtime = new CodotypeRuntime();
 // runtime.registerGenerator({ relative_path: '../codotype-vuejs-vuex-bootstrap-generator' });
 // runtime.registerGenerator({ relative_path: '../codotype-nodejs-express-mongodb-generator' });
 // runtime.registerGenerator({ relative_path: '../codotype-react-generator' });
-// runtime.registerGenerator({ relative_path: '../codotype-mongodb-dataworker' });
+// runtime.registerGenerator({ relative_path: '../../generators/codotype-vuejs-simple-generator' });
 
 // // // //
 

@@ -24,3 +24,27 @@ updates:
           #   - dependency-name: "@aws-cdk/aws-apigatewayv2-alpha"
           #   - dependency-name: "@aws-cdk/aws-apigatewayv2-integrations-alpha"
           #   - dependency-name: "aws-cdk-lib"
+
+    # Update dependencies for src/generate-endpoint lambda
+    - package-ecosystem: "npm"
+        directory: "/src/generate-endpoint"
+        schedule:
+            interval: "daily"
+        allow:
+            - dependency-name: "*"
+
+    # Update dependencies for src/plugins-endpoint lambda
+    - package-ecosystem: "npm"
+        directory: "/src/plugins-endpoint"
+        schedule:
+            interval: "daily"
+        allow:
+            - dependency-name: "*"
+
+    # Update dependencies for src/preview-endpoint lambda
+    - package-ecosystem: "npm"
+        directory: "/src/preview-endpoint"
+        schedule:
+            interval: "daily"
+        allow:
+            - dependency-name: "*"

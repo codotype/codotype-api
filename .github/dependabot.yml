@@ -27,24 +27,24 @@ updates:
 
     # Update dependencies for src/generate-endpoint lambda
     - package-ecosystem: "npm"
-        directory: "/src/generate-endpoint"
-        schedule:
-            interval: "daily"
-        allow:
-            - dependency-name: "*"
+      directory: "/src/generate-endpoint"
+      schedule:
+          interval: "daily"
+      allow:
+          - dependency-name: "*"
 
     # Update dependencies for src/plugins-endpoint lambda
     - package-ecosystem: "npm"
-        directory: "/src/plugins-endpoint"
-        schedule:
-            interval: "daily"
-        allow:
-            - dependency-name: "*"
+      directory: "/src/plugins-endpoint"
+      schedule:
+          interval: "daily"
+      allow:
+          - dependency-name: "*"
 
     # Update dependencies for src/preview-endpoint lambda
     - package-ecosystem: "npm"
-        directory: "/src/preview-endpoint"
-        schedule:
-            interval: "daily"
-        allow:
-            - dependency-name: "*"
+      directory: "/src/preview-endpoint"
+      schedule:
+          interval: "daily"
+      allow:
+          - dependency-name: "*"

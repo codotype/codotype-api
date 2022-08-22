@@ -1,4 +1,0 @@
-# ignore local generator repositories
-registered_generators/**/*
-registered_generators
-node_modules

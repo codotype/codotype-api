@@ -1,6 +1,6 @@
 # codotype-api
 
-:briefcase: Deploys a single Codotype plugin to AWS as a standalone CloudFormation stack. Built with AWS CDK + TypeScript.
+:factory: Deploys a single Codotype plugin to AWS as a standalone CloudFormation stack. Built with AWS CDK + TypeScript.
 
 <!-- https://cloudcraft.co/view/e135397e-a673-411e-9ee7-05a5618052b2?key=R-OLiwplnkA9dtQxtkVqOw&interactive=true&embed=true -->
 

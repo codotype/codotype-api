@@ -1,0 +1,26 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+    # Update dependencies for CDK stack package
+    - package-ecosystem: "npm"
+      directory: "/"
+      schedule:
+          interval: "daily"
+      allow:
+          - dependency-name: "*"
+          # Individual dependencies
+          # NOTE - remove these if the above "*" pattern works
+          #   - dependency-name: "@aws-cdk/assert"
+          #   - dependency-name: "@types/jest"
+          #   - dependency-name: "@types/node"
+          #   - dependency-name: "jest"
+          #   - dependency-name: "ts-jest"
+          #   - dependency-name: "typescript"
+          #   - dependency-name: "constructs"
+          #   - dependency-name: "@aws-cdk/aws-apigatewayv2-alpha"
+          #   - dependency-name: "@aws-cdk/aws-apigatewayv2-integrations-alpha"
+          #   - dependency-name: "aws-cdk-lib"

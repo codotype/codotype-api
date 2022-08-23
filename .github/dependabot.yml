@@ -12,18 +12,6 @@ updates:
           interval: "daily"
       allow:
           - dependency-name: "*"
-          # Individual dependencies
-          # NOTE - remove these if the above "*" pattern works
-          #   - dependency-name: "@aws-cdk/assert"
-          #   - dependency-name: "@types/jest"
-          #   - dependency-name: "@types/node"
-          #   - dependency-name: "jest"
-          #   - dependency-name: "ts-jest"
-          #   - dependency-name: "typescript"
-          #   - dependency-name: "constructs"
-          #   - dependency-name: "@aws-cdk/aws-apigatewayv2-alpha"
-          #   - dependency-name: "@aws-cdk/aws-apigatewayv2-integrations-alpha"
-          #   - dependency-name: "aws-cdk-lib"
 
     # Update dependencies for src/generate-endpoint lambda
     - package-ecosystem: "npm"

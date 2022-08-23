@@ -1,6 +1,5 @@
 import { InMemoryFileSystemAdapter, NodeRuntime } from "@codotype/runtime";
 import {
-    makeUniqueId,
     ProjectBuild,
     ProjectInput,
     RuntimeLogBehaviors,
@@ -47,16 +46,10 @@ export const handler = async (
         // Pulls project input from req.body
         const projectInput: ProjectInput = JSON.parse(event.body).projectInput;
 
-        // Defines buildID
-        const buildID: string = `${
-            projectInput.identifiers.camel
-        }-${makeUniqueId()}`;
-
         // Defines ProjectBuild
         // FEATURE - verify ProjectInput here
         // TODO - add new ProjectBuild primative to core
         const build: ProjectBuild = {
-            id: buildID,
             projectInput,
             startTime: "",
             endTime: "",
@@ -65,10 +58,18 @@ export const handler = async (
         // Generates the application
         fileSystemAdapter.files = {};
         await runtime.execute({ build });
+        const files: { [key: string]: string } = {};
+
+        // Filters out *-codotype-project.json files
+        Object.keys(fileSystemAdapter.files).forEach((k) => {
+            if (!(k.indexOf("-codotype-project.json") > -1)) {
+                files[k] = fileSystemAdapter.files[k];
+            }
+        });
 
         // Send the files back to the client
         context.succeed({
-            files: fileSystemAdapter.files,
+            files,
         });
 
         // Logs "shutdown" statement

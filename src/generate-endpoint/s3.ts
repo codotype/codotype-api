@@ -11,6 +11,7 @@ const S3_ZIPS_BUCKET_NAME = String(process.env.S3_ZIPS_BUCKET_NAME);
 const S3_JSON_BUCKET_NAME = String(process.env.S3_JSON_BUCKET_NAME);
 
 // AWS SDK Configuration
+// NOTE - use this for local development
 // AWS.config.update({
 //     accessKeyId: AWS_ACCESS_KEY_ID,
 //     secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -86,26 +87,38 @@ export function uploadFileToS3(filename: string, key: string) {
     });
 }
 
-// Retreives a file from S3
-export function getSignedDownloadUrl(key: string) {
+// // // //
+
+/**
+ * getSignedDownloadUrl
+ * Gets signed URL for a .zip file stored in S3
+ */
+export function getSignedDownloadUrl(props: {
+    s3Service: AWS.S3;
+    s3ObjectKey: string;
+    s3BucketName: string;
+}): Promise<{ success: boolean; url: string }> {
     console.log("Getting signed S3 url");
     return new Promise((resolve) => {
-        // Defines params for s3Client.getObject
-        const getObjectOptions = {
-            Bucket: S3_ZIPS_BUCKET_NAME,
-            Key: key,
+        // Defines S3.Types.GetObjectRequest
+        const getObjectOptions: AWS.S3.Types.GetObjectRequest = {
+            Bucket: props.s3BucketName,
+            Key: props.s3ObjectKey,
         };
 
         // Attempts to get the uploaded file from S3
         // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getObject-property
-        s3Client.getObject(getObjectOptions, (err) => {
+        props.s3Service.getObject(getObjectOptions, (err) => {
             // File does not exist in S3 bucket
-            if (err) return resolve(false);
+            if (err) return resolve({ success: false, url: "" });
 
             // If the file DOES exist, returns a signed URL to the uploaded S3 object
             // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getSignedUrl-property
-            const url = s3Client.getSignedUrl("getObject", getObjectOptions);
-            return resolve(url);
+            const url = props.s3Service.getSignedUrl(
+                "getObject",
+                getObjectOptions
+            );
+            return resolve({ success: true, url });
         });
     });
 }

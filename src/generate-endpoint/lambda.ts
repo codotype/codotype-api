@@ -5,11 +5,15 @@ import {
     makeUniqueId,
     ProjectBuild,
     ProjectInput,
+    ResponseTypes,
     RuntimeLogBehaviors,
 } from "@codotype/core";
-const s3obj = new AWS.S3();
+import { getSignedDownloadUrl } from "./s3";
+const s3Service = new AWS.S3();
 
 // // // //
+
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
 
 // {
 //     "version": "2.0",
@@ -21,15 +25,12 @@ const s3obj = new AWS.S3();
 //     "body": "{ projectInput: { ... }}" <---------- Stringified ProjectInput JSON is here
 //     "isBase64Encoded": false
 // }
-
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
-
 export const handler = async (
     event: any = {},
     context: any = {}
 ): Promise<any> => {
     // Log start message
-    console.log("preview-endpoint -> start");
+    console.log("generate-endpoint -> start");
     console.log(JSON.stringify(event, null, 4));
 
     console.log("S3_BUCKET_NAME");
@@ -129,6 +130,7 @@ export const handler = async (
                 const fp = filepath.split(`${buildID}/`).pop() as string;
                 console.log(`Append ${fp}`);
                 zip.append(files[filepath], { name: fp });
+                // NOTE: usage is:
                 //   .file('staticFiles/3.txt', { name: '3.txt' })
             });
             zip.finalize();
@@ -137,29 +139,28 @@ export const handler = async (
         console.log("myBuffer");
         console.log(myBuffer);
 
-        /////////////////////
-        /////////////////////
+        // // // //
+        // Upload file to S3 + generate signed download URL
 
-        // TODO - compress output
-        // TODO - upload build to S3
-        // TODO - upload output to S3
-        // TODO - generate download url for S3 file
-        // TODO - return download url to client
+        // [X] - compress output
+        // [X] - upload output to S3
+        // [X] - generate download url for S3 file
+        // [X] - return download url to client
+        // [ON_DECK] - fix handling of binary files in compress subroutine
+        // [PENDING] - upload build JSON to s3/dynamodb
 
-        // const uploadResp = await s3obj
-        //     .upload({
-        //         Bucket: S3_BUCKET_NAME,
-        //         Key: "output.zip",
-        //         Body: fs.readFileSync("/tmp/output.zip"),
-        //     })
-        //     .promise();
+        // Define key for s3 object
+        // NOTE - this creates a more human-readable zip filename inside folder named after buildID
+        const s3ObjectKey = `${buildID}/${projectInput.identifiers.kebab}.zip`;
+        console.log(`s3ObjectKey: ${s3ObjectKey}`);
 
-        // Upload generated PDF to S3 bucket
+        // Upload .zip file to S3 bucket
+        // ENHANCEMENT - use s3Obj.upload().promise() instead?
         await new Promise((resolve, reject) => {
-            s3obj
+            s3Service
                 .upload({
                     Bucket: S3_BUCKET_NAME,
-                    Key: `${buildID}.zip`, // TODO - make human readable zip inside folder named after buildID
+                    Key: s3ObjectKey,
                     Body: myBuffer,
                 })
                 .send((err, data) => {
@@ -176,16 +177,35 @@ export const handler = async (
                 });
         });
 
-        // console.log("uploadResp");
-        // console.log(uploadResp);
-
-        // Send the files back to the client
-        context.succeed({
-            status: "complete",
+        // Get signed download url for the .zip file
+        const s3Response = await getSignedDownloadUrl({
+            s3Service,
+            s3ObjectKey,
+            s3BucketName: S3_BUCKET_NAME,
         });
 
+        // If there was a problem getting the signed download URL, return error response.
+        if (!s3Response.success) {
+            console.log(
+                "generate-endpoint -> error getting signed download url"
+            );
+            console.log("generate-endpoint -> shutdown");
+            context.error({
+                message: "unknown error has occurred.",
+            });
+            return;
+        }
+
+        // Send the download link for the .zip file to the client
+        context.succeed({
+            filepath: s3Response,
+            type: ResponseTypes.s3,
+        });
+
+        // TODO - upload codotype-project.json here? *or* dump into dynamodb?
+
         // Logs "shutdown" statement
-        console.log("preview-endpoint -> shutdown");
+        console.log("generate-endpoint -> shutdown");
         return;
     } catch (error) {
         console.log("ERROR!");

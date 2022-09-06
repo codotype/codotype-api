@@ -61,6 +61,12 @@ export const handler = async (
         await runtime.execute({ build });
         const files: { [key: string]: string } = {};
 
+        // Log InMemoryFileSystemAdapter state
+        console.log("InMemoryFileSystemAdapter files:");
+        console.log(
+            JSON.stringify(Object.keys(fileSystemAdapter.files), null, 4)
+        );
+
         // Filters out *-codotype-project.json files so they're not shown in the UI
         Object.keys(fileSystemAdapter.files).forEach((k) => {
             if (!(k.indexOf("-codotype-project.json") > -1)) {

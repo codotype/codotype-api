@@ -14,13 +14,9 @@ export class ApiGatewayStack extends cdk.Stack {
 
         // Provisions S3 bucket for uploading .zip + .json files
         // Doc: https://docs.aws.amazon.com/cdk/api/latest/docs/aws-s3-readme.html#logging-configuration
-        const outputBucket: s3.Bucket = new s3.Bucket(
-            this,
-            `output-bucket-${pluginID.toLowerCase}`,
-            {
-                removalPolicy: RemovalPolicy.DESTROY,
-            }
-        );
+        const outputBucket: s3.Bucket = new s3.Bucket(this, "output-bucket", {
+            removalPolicy: RemovalPolicy.DESTROY,
+        });
 
         const pluginsEndpointLambda = new lambda.Function(
             this,
@@ -76,7 +72,10 @@ export class ApiGatewayStack extends cdk.Stack {
         );
 
         // Define new HTTP API
-        const httpApi = new apigateway.HttpApi(this, `${pluginID}-HttpApi`);
+        const httpApi = new apigateway.HttpApi(
+            this,
+            `codotype-${pluginID}-http-api`
+        );
 
         // GET /plugins
         httpApi.addRoutes({

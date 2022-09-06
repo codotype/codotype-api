@@ -8,16 +8,15 @@ import { CfnOutput, RemovalPolicy } from "aws-cdk-lib";
 
 // // // //
 
-// TODO - pass in PluginID here, scope stack's assets to a single plugin
 export class ApiGatewayStack extends cdk.Stack {
-    constructor(scope: Construct, id: string) {
+    constructor(scope: Construct, id: string, pluginID: string) {
         super(scope, id);
 
-        // Provisions S3 bucket for uploading .zip files
+        // Provisions S3 bucket for uploading .zip + .json files
         // Doc: https://docs.aws.amazon.com/cdk/api/latest/docs/aws-s3-readme.html#logging-configuration
-        const zipBucket: s3.Bucket = new s3.Bucket(
+        const outputBucket: s3.Bucket = new s3.Bucket(
             this,
-            "codotype-build-zip-uploads-test",
+            `output-bucket-${pluginID.toLowerCase}`,
             {
                 removalPolicy: RemovalPolicy.DESTROY,
             }
@@ -53,13 +52,13 @@ export class ApiGatewayStack extends cdk.Stack {
                 timeout: cdk.Duration.seconds(30),
                 memorySize: 1024,
                 environment: {
-                    S3_BUCKET_NAME: zipBucket.bucketName,
+                    S3_BUCKET_NAME: outputBucket.bucketName,
                 },
             }
         );
 
         // Adds permissions for the generateEndpointLambda to read/write to S3
-        zipBucket.grantReadWrite(generateEndpointLambda);
+        outputBucket.grantReadWrite(generateEndpointLambda);
 
         const getPluginsIntegration = new HttpLambdaIntegration(
             "CodotypeGetPluginsIntegration",
@@ -77,7 +76,7 @@ export class ApiGatewayStack extends cdk.Stack {
         );
 
         // Define new HTTP API
-        const httpApi = new apigateway.HttpApi(this, "HttpApi");
+        const httpApi = new apigateway.HttpApi(this, `${pluginID}-HttpApi`);
 
         // GET /plugins
         httpApi.addRoutes({

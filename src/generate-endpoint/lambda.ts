@@ -1,4 +1,5 @@
-import { InMemoryFileSystemAdapter, NodeRuntime } from "@codotype/runtime";
+import { LocalFileSystemAdapter, NodeRuntime } from "@codotype/runtime";
+import { OUTPUT_DIRECTORY } from "@codotype/runtime/dist/constants"; // ENHANCEMENT - export constants in @codotype/runtime
 import * as archiver from "archiver";
 import * as AWS from "aws-sdk";
 import {
@@ -8,13 +9,17 @@ import {
     ResponseTypes,
     RuntimeLogBehaviors,
 } from "@codotype/core";
-import { getSignedDownloadUrl } from "./s3";
+import { getSignedDownloadUrl, uploadFile } from "./s3";
+import { getFilesRecursively } from "./getFilesRecursively";
+import { readFileSync } from "fs";
 const s3Service = new AWS.S3();
 
 // // // //
 
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
 
+// ENHANACEMENT - add correct TypeScript interfaces for event + context
+// Event type:
 // {
 //     "version": "2.0",
 //     "routeKey": "POST /preview",
@@ -36,12 +41,12 @@ export const handler = async (
     console.log("S3_BUCKET_NAME");
     console.log(S3_BUCKET_NAME);
 
-    // Define CWD const
+    // Define CWD const for output
     const cwd = "/tmp";
 
     try {
         // Initialize InMemoryFileSystemAdapter
-        const fileSystemAdapter = new InMemoryFileSystemAdapter();
+        // const fileSystemAdapter = new LocalFileSystemAdapter();
 
         // Initialize Codotype Runtime
         // NOTE - this is `/tmp` beacuse that determined the output directory of the plugin
@@ -49,7 +54,7 @@ export const handler = async (
             cwd,
             logBehavior: RuntimeLogBehaviors.normal,
             fileOverwriteBehavior: "force",
-            fileSystemAdapter,
+            fileSystemAdapter: new LocalFileSystemAdapter(),
         });
 
         // Register the plugin
@@ -66,8 +71,8 @@ export const handler = async (
         }-${makeUniqueId()}`;
 
         // Defines ProjectBuild
-        // FEATURE - verify ProjectInput here
-        // TODO - add new ProjectBuild primative to core
+        // ENHANCEMENT - verify ProjectInput here
+        // ENHANCEMENT - add new ProjectBuild primative to core
         const build: ProjectBuild = {
             id: buildID,
             projectInput,
@@ -78,109 +83,90 @@ export const handler = async (
         // Generates the application
         await runtime.execute({ build });
 
-        // Defines key for storage in S3
-        // const zipFn = zipFilename(cwd, buildID);
-        // const buildDir = buildDirectoryPath(cwd, buildID);
-        // const key = filename.split("/").pop();
+        // Compress files into a .zip archive as a buffer
+        const zipArchiveBuffer = await new Promise<Buffer>((resolve) => {
+            // Instantiate new .zip file
+            const zip = archiver("zip");
 
-        // console.log("zip filename");
-        // console.log(filename);
-
-        // console.log("buildDir");
-        // console.log(buildDir);
-
-        /////////////////////
-        /////////////////////
-
-        const myBuffer = await new Promise<Buffer>((resolve) => {
-            // NOTE - this might not work for binary files
-            const files = fileSystemAdapter.files;
-
-            let zip = archiver("zip");
-
-            let buffer: null | Buffer = null;
+            let contentsBuffer: null | Buffer = null;
 
             zip.on("data", (data) => {
                 let bufs: Buffer[] = [data];
-                if (buffer !== null) {
-                    bufs = [buffer, data];
+                if (contentsBuffer !== null) {
+                    bufs = [contentsBuffer, data];
                 }
-                buffer = Buffer.concat(bufs);
+                contentsBuffer = Buffer.concat(bufs);
             });
 
             zip.on("end", () => {
                 // let data = Buffer.concat(buffer);
                 console.log("data");
-                console.log(buffer);
-                if (buffer !== null) {
-                    return resolve(buffer);
+                console.log(contentsBuffer);
+
+                // Resolve the promise if the
+                if (contentsBuffer !== null) {
+                    return resolve(contentsBuffer);
                 }
                 console.log("not a buffer?");
-                console.log(buffer);
+                console.log(contentsBuffer);
                 throw new Error("Buffer is not a buffer!");
             });
 
-            // TODO - clean this up
-            // TODO - update this to read in the output file paths recursively
-            // and add each item using zip.appnd(contents, { name: filepath })
-            // where contents is a buffer instead of a string
-            // this will allow this operation to support binary files,
-            // which the current implementation does not
-            Object.keys(files).forEach((filepath) => {
+            // Gets all files for this build
+            const files = getFilesRecursively(
+                `${cwd}/${OUTPUT_DIRECTORY}/${buildID}`
+            );
+
+            // Log out files being added to the .zip
+            console.log("FILES:");
+            console.log(JSON.stringify(files, null, 4));
+
+            // Add each file to the .zip
+            files.forEach((filepath) => {
+                // Strip output directionr + buildID from file location in .zip file
                 const fp = filepath.split(`${buildID}/`).pop() as string;
-                console.log(`Append ${fp}`);
-                zip.append(files[filepath], { name: fp });
+                console.log(`Append ${fp} to .zip`);
+                zip.append(readFileSync(filepath), { name: fp });
                 // NOTE: usage is:
-                //   .file('staticFiles/3.txt', { name: '3.txt' })
+                //   .file('contents on file.txt', { name: 'file.txt' })
             });
+
+            // Finalize .zip file
             zip.finalize();
         });
 
-        console.log("myBuffer");
-        console.log(myBuffer);
-
         // // // //
-        // Upload file to S3 + generate signed download URL
+        // Upload .zip + .json files to S3 + generate signed download URL
 
-        // [X] - compress output
-        // [X] - upload output to S3
-        // [X] - generate download url for S3 file
-        // [X] - return download url to client
-        // [ON_DECK] - fix handling of binary files in compress subroutine
-        // [PENDING] - upload build JSON to s3/dynamodb
+        // Define key for .json upload
+        const s3ObjectKeyJson = `json/${buildID}.json`;
+        console.log(`s3ObjectKeyJson: ${s3ObjectKeyJson}`);
 
-        // Define key for s3 object
+        // Define key for .zip upload
         // NOTE - this creates a more human-readable zip filename inside folder named after buildID
-        const s3ObjectKey = `${buildID}/${projectInput.identifiers.kebab}.zip`;
-        console.log(`s3ObjectKey: ${s3ObjectKey}`);
+        const s3ObjectKeyZip = `zip/${buildID}/${projectInput.identifiers.kebab}.zip`;
+        console.log(`s3ObjectKeyZip: ${s3ObjectKeyZip}`);
 
-        // Upload .zip file to S3 bucket
-        // ENHANCEMENT - use s3Obj.upload().promise() instead?
-        await new Promise((resolve, reject) => {
-            s3Service
-                .upload({
-                    Bucket: S3_BUCKET_NAME,
-                    Key: s3ObjectKey,
-                    Body: myBuffer,
-                })
-                .send((err, data) => {
-                    console.log(err, data);
-                    // Logs error
-                    if (err) {
-                        console.log(`upload to s3 -> ERROR`);
-                        console.log(err);
-                        reject(err);
-                        return;
-                    }
-                    console.log(`upload to s3 -> SUCCESS!`);
-                    resolve(true);
-                });
+        // Upload .zip file to S3
+        await uploadFile({
+            s3Service,
+            s3ObjectKey: s3ObjectKeyZip,
+            s3BucketName: S3_BUCKET_NAME,
+            uploadBuffer: zipArchiveBuffer,
+        });
+
+        // Upload codotype-project.json file to S3
+        await uploadFile({
+            s3Service,
+            s3ObjectKey: s3ObjectKeyJson,
+            s3BucketName: S3_BUCKET_NAME,
+            uploadBuffer: Buffer.from(JSON.stringify(projectInput, null, 4)),
         });
 
         // Get signed download url for the .zip file
         const s3Response = await getSignedDownloadUrl({
             s3Service,
-            s3ObjectKey,
+            s3ObjectKey: s3ObjectKeyZip,
             s3BucketName: S3_BUCKET_NAME,
         });
 
@@ -198,11 +184,9 @@ export const handler = async (
 
         // Send the download link for the .zip file to the client
         context.succeed({
-            filepath: s3Response,
+            filepath: s3Response.url,
             type: ResponseTypes.s3,
         });
-
-        // TODO - upload codotype-project.json here? *or* dump into dynamodb?
 
         // Logs "shutdown" statement
         console.log("generate-endpoint -> shutdown");

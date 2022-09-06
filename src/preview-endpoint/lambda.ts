@@ -7,6 +7,8 @@ import {
 
 // // // //
 
+// ENHANACEMENT - add correct TypeScript interfaces for event + context
+// Event type:
 // {
 //     "version": "2.0",
 //     "routeKey": "POST /preview",
@@ -17,7 +19,6 @@ import {
 //     "body": "{ projectInput: { ... }}" <---------- Stringified ProjectInput JSON is here
 //     "isBase64Encoded": false
 // }
-
 export const handler = async (
     event: any = {},
     context: any = {}
@@ -47,8 +48,8 @@ export const handler = async (
         const projectInput: ProjectInput = JSON.parse(event.body).projectInput;
 
         // Defines ProjectBuild
-        // FEATURE - verify ProjectInput here
-        // TODO - add new ProjectBuild primative to core
+        // ENHANCEMENT - verify ProjectInput here
+        // ENHANCEMENT - add new ProjectBuild primative to core
         const build: ProjectBuild = {
             projectInput,
             startTime: "",
@@ -60,7 +61,7 @@ export const handler = async (
         await runtime.execute({ build });
         const files: { [key: string]: string } = {};
 
-        // Filters out *-codotype-project.json files
+        // Filters out *-codotype-project.json files so they're not shown in the UI
         Object.keys(fileSystemAdapter.files).forEach((k) => {
             if (!(k.indexOf("-codotype-project.json") > -1)) {
                 files[k] = fileSystemAdapter.files[k];

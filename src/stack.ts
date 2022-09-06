@@ -8,7 +8,7 @@ import { CfnOutput, RemovalPolicy } from "aws-cdk-lib";
 
 // // // //
 
-// TODO - pass in PluginID here, scope each
+// TODO - pass in PluginID here, scope stack's assets to a single plugin
 export class ApiGatewayStack extends cdk.Stack {
     constructor(scope: Construct, id: string) {
         super(scope, id);
@@ -45,7 +45,7 @@ export class ApiGatewayStack extends cdk.Stack {
 
         const generateEndpointLambda = new lambda.Function(
             this,
-            "generatepreview-endpoint",
+            "generate-endpoint",
             {
                 code: new lambda.AssetCode("src/generate-endpoint"),
                 handler: "lambda.handler",

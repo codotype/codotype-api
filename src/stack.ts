@@ -9,7 +9,7 @@ import { CfnOutput, RemovalPolicy } from "aws-cdk-lib";
 // // // //
 
 export class ApiGatewayStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, pluginID: string) {
+    constructor(scope: Construct, id: string, pluginPostfix: string) {
         super(scope, id);
 
         // Provisions S3 bucket for uploading .zip + .json files
@@ -74,7 +74,7 @@ export class ApiGatewayStack extends cdk.Stack {
         // Define new HTTP API
         const httpApi = new apigateway.HttpApi(
             this,
-            `codotype-${pluginID}-http-api`
+            `codotype-${pluginPostfix}-http-api`
         );
 
         // GET /plugins

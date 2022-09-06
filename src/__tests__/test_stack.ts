@@ -9,7 +9,11 @@ describe("ApiGatewayStack", () => {
         const app = new cdk.App();
 
         // Configures CDK stack
-        const stack: cdk.Stack = new ApiGatewayStack(app, "ApiGatewayStack");
+        const stack: cdk.Stack = new ApiGatewayStack(
+            app,
+            "codotype-plugin-test",
+            "plugin-test"
+        );
 
         // Checks stack resource count
         expectCDK(stack).to(countResources("AWS::Lambda::Function", 1));

@@ -843,10 +843,10 @@ aws-cdk-lib@^2.44.0:
     semver "^7.3.7"
     yaml "1.10.2"
 
-aws-sdk@^2.1209.0:
-  version "2.1209.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1209.0.tgz#fd7b9efd4047ab6b45bba2c890529d4c296a4b85"
-  integrity sha512-m4Dd0HtyKeKBjwzP9rhe+NcmsRKR0wW+QXfpepu6vgXYhmcJuOB9TLUoeB7jiNDPimmwU+KxtL6eonRfeFhANw==
+aws-sdk@^2.1236.0:
+  version "2.1236.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1236.0.tgz#32f7ef37ceab3ffe3928f1bd932d420de52e3d6a"
+  integrity sha512-fLxLn0OhySFkfuQCZ0EF8ueiaF24Y1DWxWcw+K1NojkaKnHZq8T9R3F0UnuwpQ/AEXLyI+owYUk5QAMfhQaENA==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"

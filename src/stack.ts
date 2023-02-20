@@ -25,6 +25,7 @@ export class ApiGatewayStack extends cdk.Stack {
                 code: new lambda.AssetCode("src/plugins-endpoint"),
                 handler: "lambda.handler",
                 runtime: lambda.Runtime.NODEJS_16_X,
+                timeout: cdk.Duration.seconds(30),
             }
         );
 
@@ -35,6 +36,7 @@ export class ApiGatewayStack extends cdk.Stack {
                 code: new lambda.AssetCode("src/preview-endpoint"),
                 handler: "lambda.handler",
                 runtime: lambda.Runtime.NODEJS_16_X,
+                timeout: cdk.Duration.seconds(30),
             }
         );
 

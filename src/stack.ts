@@ -37,6 +37,7 @@ export class ApiGatewayStack extends cdk.Stack {
                 handler: "lambda.handler",
                 runtime: lambda.Runtime.NODEJS_16_X,
                 timeout: cdk.Duration.seconds(30),
+                memorySize: 1024,
             }
         );
 

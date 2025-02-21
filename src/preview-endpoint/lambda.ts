@@ -74,6 +74,18 @@ export const handler = async (
             }
         });
 
+        // TODO - all the files should have the .codotype-out/ prefix remove
+        // TODO - this MUST happen before the files are sent to the client
+        // TODO - this MUST happen before release
+        // Object.keys(files).forEach((fn) => {
+        //     const relativeFn = fn.split(".codotype-out/").pop();
+        //     if (relativeFn === undefined) return;
+        //     relativeFiles[relativeFn] = {
+        //         content: files[fn],
+        //         isBinary: false,
+        //     };
+        // });
+        
         // Send the files back to the client
         context.succeed({
             files,
